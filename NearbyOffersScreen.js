@@ -1,10 +1,11 @@
-import React, { useMemo, useState } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, StatusBar, ScrollView, TouchableOpacity, Image, TextInput } from 'react-native';
+import React, { useMemo, useState, useCallback } from 'react';
+import { View, Text, StyleSheet, SafeAreaView, StatusBar, ScrollView, TouchableOpacity, Image, TextInput, RefreshControl } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 
-export default function NearbyOffersScreen({ onBack, onOpenMap, onOpenMenus, userLocation, createdBaskets = [], onNavigateHome, onNavigatePanier, onNavigateProfil }) {
+export default function NearbyOffersScreen({ onBack, onOpenMap, onOpenMenus, userLocation, createdBaskets = [], onNavigateHome, onNavigatePanier, onNavigateProfil, onRefresh, cartItems = [], onNavigateToOrderConfirmation }) {
   const [isSearching, setIsSearching] = useState(false);
   const [query, setQuery] = useState('');
+  const [refreshing, setRefreshing] = useState(false);
 
   const items = useMemo(
     () => [
@@ -117,16 +118,38 @@ export default function NearbyOffersScreen({ onBack, onOpenMap, onOpenMenus, use
     );
   }, [itemsWithDistance, query]);
 
+  const handleRefresh = useCallback(async () => {
+    try {
+      setRefreshing(true);
+      await Promise.resolve(onRefresh?.());
+    } finally {
+      setRefreshing(false);
+    }
+  }, [onRefresh]);
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={["#2d5a27"]} tintColor="#2d5a27" />
+        }
+      >
         <Text style={styles.title}>Paniers autour de moi</Text>
 
         {userLocation?.coords && (
           <View style={styles.locationInfo}>
             <MaterialIcons name="location-on" size={16} color="#2d5a27" />
             <Text style={styles.locationText}>Localisation activée</Text>
+            {/* Finaliser mes paniers button - only show when there are items in cart */}
+            {cartItems.length > 0 && (
+              <TouchableOpacity style={styles.finalizeButton} onPress={() => onNavigateToOrderConfirmation?.()}>
+                <MaterialIcons name="shopping-basket" size={16} color="#fff" />
+                <Text style={styles.finalizeButtonText}>Finaliser ({cartItems.length})</Text>
+              </TouchableOpacity>
+            )}
           </View>
         )}
 
@@ -257,6 +280,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     marginBottom: 16,
     alignSelf: 'center',
+    gap: 12,
   },
   locationText: {
     marginLeft: 4,
@@ -446,5 +470,20 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#999',
     marginTop: 4,
+  },
+  finalizeButton: {
+    backgroundColor: '#2d5a27',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 15,
+    gap: 4,
+  },
+  finalizeButtonText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
   },
 });

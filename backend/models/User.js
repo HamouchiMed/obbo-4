@@ -4,11 +4,24 @@ const bcrypt = require('bcryptjs');
 const userSchema = new mongoose.Schema({
   email: {
     type: String,
-    required: [true, 'Email is required'],
+    required: function() {
+      return !this.phone; // Email is required if phone is not provided
+    },
     unique: true,
+    sparse: true, // Allow multiple null values
     lowercase: true,
     trim: true,
     match: [/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, 'Please enter a valid email']
+  },
+  phone: {
+    type: String,
+    required: function() {
+      return !this.email; // Phone is required if email is not provided
+    },
+    unique: true,
+    sparse: true, // Allow multiple null values
+    trim: true,
+    match: [/^(\+212|0)[5-7][0-9]{8}$/, 'Please enter a valid Moroccan phone number']
   },
   password: {
     type: String,
@@ -27,10 +40,6 @@ const userSchema = new mongoose.Schema({
       trim: true
     },
     lastName: {
-      type: String,
-      trim: true
-    },
-    phone: {
       type: String,
       trim: true
     },
@@ -102,6 +111,15 @@ const userSchema = new mongoose.Schema({
   lastLogin: {
     type: Date,
     default: null
+  },
+  // Password reset
+  resetPasswordToken: {
+    type: String,
+    default: null
+  },
+  resetPasswordExpires: {
+    type: Date,
+    default: null
   }
 }, {
   timestamps: true,
@@ -111,6 +129,7 @@ const userSchema = new mongoose.Schema({
 
 // Indexes
 userSchema.index({ email: 1 });
+userSchema.index({ phone: 1 });
 userSchema.index({ userType: 1 });
 userSchema.index({ 'profile.businessName': 1 });
 userSchema.index({ 'profile.address.coordinates': '2dsphere' });

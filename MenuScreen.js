@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, SafeAreaView, StatusBar, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 
-export default function MenuScreen({ onBack, shop, onAddToCart }) {
+export default function MenuScreen({ onBack, shop, onAddToCart, cartItems = [], onNavigateToCart }) {
   if (!shop) {
     return (
       <SafeAreaView style={styles.container}>
@@ -37,6 +37,12 @@ export default function MenuScreen({ onBack, shop, onAddToCart }) {
           <MaterialIcons name="arrow-back" size={24} color="#000" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{shop.name} - Menus</Text>
+        {cartItems.length > 0 && (
+          <TouchableOpacity style={styles.basketButton} onPress={onNavigateToCart}>
+            <MaterialIcons name="shopping-basket" size={24} color="#2d5a27" />
+            <Text style={styles.basketText}>Finaliser ma commande</Text>
+          </TouchableOpacity>
+        )}
       </View>
       
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
@@ -227,5 +233,19 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#999',
     marginTop: 4,
+  },
+  basketButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#e8f5e8',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    gap: 6,
+  },
+  basketText: {
+    color: '#2d5a27',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });

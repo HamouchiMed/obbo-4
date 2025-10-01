@@ -90,6 +90,12 @@ export default function CreateBasketScreen({ onBack, onBasketCreated }) {
       Alert.alert('Erreur', 'Veuillez saisir le prix du panier.');
       return;
     }
+    // Normalize price: replace comma with dot and parse
+    const normalizedPrice = parseFloat(price.replace(',', '.'));
+    if (Number.isNaN(normalizedPrice) || normalizedPrice < 0) {
+      Alert.alert('Erreur', 'Prix invalide. Utilisez un nombre (ex: 19.99).');
+      return;
+    }
     if (!collectionDate.trim()) {
       Alert.alert('Erreur', 'Veuillez saisir la date de collecte.');
       return;
@@ -101,7 +107,7 @@ export default function CreateBasketScreen({ onBack, onBasketCreated }) {
 
     const basketData = {
       name: basketName.trim(),
-      price: parseFloat(price),
+      price: normalizedPrice,
       collectionDate: collectionDate.trim(),
       collectionTime: collectionTime.trim(),
       image: selectedImage,

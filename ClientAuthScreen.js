@@ -13,14 +13,20 @@
   import { MaterialIcons } from '@expo/vector-icons';
   import * as WebBrowser from 'expo-web-browser';
   import * as Google from 'expo-auth-session/providers/google';
+  import { api } from './utils/config';
 
   WebBrowser.maybeCompleteAuthSession();
 
   export default function ClientAuthScreen({ onBack, onLoginSuccess }) {
     const [isLogin, setIsLogin] = useState(true);
     const [email, setEmail] = useState('');
+    const [phone, setPhone] = useState('');
     const [password, setPassword] = useState('');
     const [name, setName] = useState('');
+    const [showForgot, setShowForgot] = useState(false);
+    const [forgotEmail, setForgotEmail] = useState('');
+    const [message, setMessage] = useState('');
+    const [usePhone, setUsePhone] = useState(false);
     const [request, response, promptAsync] = Google.useAuthRequest({
       expoClientId: 'YOUR_EXPO_GOOGLE_CLIENT_ID',
       iosClientId: 'YOUR_IOS_GOOGLE_CLIENT_ID',
@@ -44,20 +50,88 @@
       }
     }, [response]);
 
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
       if (isLogin) {
-        console.log('Login pressed', { email, password });
-        onLoginSuccess && onLoginSuccess();
+        try {
+          const loginData = {
+            password,
+            ...(usePhone ? { phone } : { email })
+          };
+          
+          const res = await fetch(api('/api/auth/login'), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(loginData)
+          });
+          
+          const data = await res.json();
+          if (data?.success) {
+            onLoginSuccess && onLoginSuccess();
+          } else {
+            setMessage(data?.message || 'Erreur de connexion');
+          }
+        } catch (e) {
+          setMessage('Erreur réseau');
+        }
       } else {
-        console.log('Signup pressed', { name, email, password });
+        try {
+          const registerData = {
+            firstName: name.split(' ')[0] || '',
+            lastName: name.split(' ').slice(1).join(' ') || '',
+            password,
+            userType: 'client',
+            ...(usePhone ? { phone } : { email })
+          };
+          
+          const res = await fetch(api('/api/auth/register'), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(registerData)
+          });
+          
+          const data = await res.json();
+          if (data?.success) {
+            setMessage('Inscription réussie ! Vous pouvez maintenant vous connecter.');
+            setIsLogin(true);
+            setEmail('');
+            setPhone('');
+            setPassword('');
+            setName('');
+          } else {
+            setMessage(data?.message || 'Erreur d\'inscription');
+          }
+        } catch (e) {
+          setMessage('Erreur réseau');
+        }
+      }
+    };
+
+    const handleForgotPassword = async () => {
+      try {
+        setMessage('');
+        const res = await fetch(api('/api/auth/forgot-password'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: forgotEmail || email })
+        });
+        const data = await res.json();
+        if (data?.success) {
+          setMessage('Si cet email existe, un lien vous a été envoyé.');
+        } else {
+          setMessage('Une erreur est survenue. Réessayez.');
+        }
+      } catch (e) {
+        setMessage('Erreur réseau.');
       }
     };
 
     const toggleMode = () => {
       setIsLogin(!isLogin);
       setEmail('');
+      setPhone('');
       setPassword('');
       setName('');
+      setMessage('');
     };
 
     return (
@@ -119,21 +193,42 @@
               </View>
             )}
             
-            {/* Email Input */}
+            {/* Email/Phone Toggle */}
+            <View style={styles.toggleContainer}>
+              <TouchableOpacity 
+                style={[styles.toggleOption, !usePhone && styles.toggleOptionActive]} 
+                onPress={() => setUsePhone(false)}
+              >
+                <Text style={[styles.toggleText, !usePhone && styles.toggleTextActive]}>Email</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.toggleOption, usePhone && styles.toggleOptionActive]} 
+                onPress={() => setUsePhone(true)}
+              >
+                <Text style={[styles.toggleText, usePhone && styles.toggleTextActive]}>Téléphone</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Email/Phone Input */}
             <View style={styles.inputContainer}>
-              <MaterialIcons name="email" size={20} color="#666" style={styles.inputIcon} />
+              <MaterialIcons 
+                name={usePhone ? "phone" : "email"} 
+                size={20} 
+                color="#666" 
+                style={styles.inputIcon} 
+              />
               <TextInput
                 style={styles.input}
-                placeholder="Email"
+                placeholder={usePhone ? "Numéro de téléphone" : "Email"}
                 placeholderTextColor="#666"
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
+                value={usePhone ? phone : email}
+                onChangeText={usePhone ? setPhone : setEmail}
+                keyboardType={usePhone ? "phone-pad" : "email-address"}
                 autoCapitalize="none"
               />
             </View>
             
-            {/* Password Input */}
+          {/* Password Input */}
             <View style={styles.inputContainer}>
               <MaterialIcons name="lock" size={20} color="#666" style={styles.inputIcon} />
               <TextInput
@@ -145,7 +240,21 @@
                 secureTextEntry
               />
             </View>
+
+          {/* Forgot password link */}
+          {isLogin && !usePhone && (
+            <TouchableOpacity onPress={() => { setShowForgot(true); setForgotEmail(email); }} style={styles.forgotContainer}>
+              <Text style={styles.forgotText}>Mot de passe oublié ?</Text>
+            </TouchableOpacity>
+          )}
             
+            {/* Message Display */}
+            {message && (
+              <Text style={[styles.messageText, message.includes('réussie') ? styles.successMessage : styles.errorMessage]}>
+                {message}
+              </Text>
+            )}
+
             {/* Submit Button */}
             <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
               <Text style={styles.submitButtonText}>
@@ -153,6 +262,32 @@
               </Text>
             </TouchableOpacity>
             
+          {/* Forgot Password Panel */}
+          {showForgot && (
+            <View style={styles.forgotPanel}>
+              <Text style={styles.forgotTitle}>Réinitialiser le mot de passe</Text>
+              <View style={styles.inputContainer}>
+                <MaterialIcons name="email" size={20} color="#666" style={styles.inputIcon} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Votre email"
+                  placeholderTextColor="#666"
+                  value={forgotEmail}
+                  onChangeText={setForgotEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                />
+              </View>
+              <TouchableOpacity style={styles.submitButton} onPress={handleForgotPassword}>
+                <Text style={styles.submitButtonText}>Envoyer le lien</Text>
+              </TouchableOpacity>
+              {!!message && <Text style={styles.infoText}>{message}</Text>}
+              <TouchableOpacity style={styles.cancelButton} onPress={() => { setShowForgot(false); setMessage(''); }}>
+                <Text style={styles.cancelText}>Annuler</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
             {/* Toggle Mode */}
             <TouchableOpacity style={styles.toggleButton} onPress={toggleMode}>
               <Text style={styles.toggleText}>
@@ -319,5 +454,79 @@
       color: '#2d5a27',
       fontSize: 14,
       textDecorationLine: 'underline',
+    },
+    forgotContainer: {
+      alignItems: 'flex-end',
+      marginBottom: 10,
+    },
+    forgotText: {
+      color: '#2d5a27',
+      fontSize: 13,
+      textDecorationLine: 'underline',
+    },
+    forgotPanel: {
+      marginTop: 16,
+      padding: 12,
+      borderWidth: 1,
+      borderColor: '#e0e0e0',
+      borderRadius: 12,
+      backgroundColor: '#fafafa',
+    },
+    forgotTitle: {
+      fontSize: 16,
+      fontWeight: '600',
+      marginBottom: 8,
+      color: '#000',
+    },
+    infoText: {
+      marginTop: 10,
+      color: '#2d5a27',
+      fontSize: 13,
+    },
+    cancelButton: {
+      alignItems: 'center',
+      marginTop: 10,
+    },
+    cancelText: {
+      color: '#666',
+      fontSize: 13,
+    },
+    toggleContainer: {
+      flexDirection: 'row',
+      backgroundColor: '#f5f5f5',
+      borderRadius: 12,
+      padding: 4,
+      marginBottom: 15,
+    },
+    toggleOption: {
+      flex: 1,
+      paddingVertical: 10,
+      paddingHorizontal: 15,
+      borderRadius: 8,
+      alignItems: 'center',
+    },
+    toggleOptionActive: {
+      backgroundColor: '#2d5a27',
+    },
+    toggleText: {
+      fontSize: 14,
+      color: '#666',
+      fontWeight: '500',
+    },
+    toggleTextActive: {
+      color: '#ffffff',
+      fontWeight: '600',
+    },
+    messageText: {
+      fontSize: 14,
+      textAlign: 'center',
+      marginVertical: 10,
+      paddingHorizontal: 10,
+    },
+    successMessage: {
+      color: '#2d5a27',
+    },
+    errorMessage: {
+      color: '#d32f2f',
     },
   });
