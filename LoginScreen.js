@@ -4,6 +4,7 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
+  Alert,
   TextInput,
   SafeAreaView,
   StatusBar,
@@ -13,6 +14,7 @@ import {
 import { MaterialIcons } from '@expo/vector-icons';
 import * as WebBrowser from 'expo-web-browser';
 import * as Google from 'expo-auth-session/providers/google';
+import { makeRedirectUri } from 'expo-auth-session';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -24,17 +26,38 @@ export default function LoginScreen({ userType, onBack }) {
     iosClientId: 'YOUR_IOS_GOOGLE_CLIENT_ID',
     androidClientId: 'YOUR_ANDROID_GOOGLE_CLIENT_ID',
     webClientId: 'YOUR_WEB_GOOGLE_CLIENT_ID',
+    scopes: ['profile', 'email'],
+    redirectUri: makeRedirectUri({ useProxy: true }),
   });
 
   const handleGoogleLogin = async () => {
+    const placeholder = (id) => !id || id.includes('YOUR_');
+    if (placeholder(request?.config?.expoClientId) || placeholder(request?.config?.webClientId)) {
+      Alert.alert(
+        'Google OAuth non configuré',
+        'Veuillez configurer vos client IDs Google dans le code (expoClientId / webClientId / iosClientId / androidClientId).'
+      );
+      return;
+    }
+
     try {
       await promptAsync({ useProxy: true });
     } catch (e) {
       console.warn('Google auth error', e);
+      Alert.alert('Erreur Google', 'Impossible de démarrer l\'authentification Google.');
     }
   };
 
   const handleLogin = () => {
+    // Validation: require email and password before attempting login
+    if (!email || !password) {
+      Alert.alert(
+        'Connexion requise',
+        "Veuillez entrer votre email (ou numéro) et votre mot de passe, ou vous inscrire d'abord.",
+      );
+      return;
+    }
+
     // Handle login logic here
     console.log('Login pressed', { email, password, userType });
   };
@@ -43,6 +66,20 @@ export default function LoginScreen({ userType, onBack }) {
     if (response?.type === 'success') {
       const { authentication } = response;
       console.log('Google authenticated', authentication);
+
+      (async () => {
+        try {
+          const res = await fetch('https://www.googleapis.com/userinfo/v2/me', {
+            headers: { Authorization: `Bearer ${authentication.accessToken}` }
+          });
+          const profile = await res.json();
+          console.log('Google profile', profile);
+          // TODO: send token/profile to backend or proceed to app
+        } catch (e) {
+          console.warn('Failed to fetch Google profile', e);
+          Alert.alert('Erreur', 'Impossible de récupérer les informations Google.');
+        }
+      })();
     }
   }, [response]);
 

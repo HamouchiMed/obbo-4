@@ -40,7 +40,7 @@ export default function DealerLoginScreen({ onBack, onGoToRegistration, onLoginS
       // Go directly to basket list without showing success message
       onLoginSuccess?.();
     } catch (error) {
-      Alert.alert('Erreur', 'Email ou mot de passe incorrect.');
+      // Removed error message
     } finally {
       setIsLoading(false);
     }

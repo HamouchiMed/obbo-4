@@ -7,7 +7,7 @@ export default function LocationPermissionScreen({ onBack, onGranted, onSkip }) 
 
   const requestPermission = async () => {
     try {
-      setRequesting(true);4
+      setRequesting(true);
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
         Alert.alert('Permission refusée', "Nous avons besoin de la localisation pour afficher les offres proches.");
@@ -33,9 +33,9 @@ export default function LocationPermissionScreen({ onBack, onGranted, onSkip }) 
           <Image source={require('./assets/obbo.png')} style={styles.image} resizeMode="contain" />
         </View>
 
-        <Text style={styles.subtitle}>Obbo utilise ta position pour afficher les paniers à proximité.</Text>
+  <Text style={styles.subtitle}>Obbo utilise ta position pour afficher les paniers à proximité.</Text>
 
-        <TouchableOpacity style={styles.enableButton} onPress={requestPermission} disabled={requesting}>
+        <TouchableOpacity style={[styles.enableButton, requesting && styles.disabledButton]} onPress={requestPermission} disabled={requesting}>
           <Text style={styles.enableText}>{requesting ? 'Activation…' : 'Activer la localisation'}</Text>
         </TouchableOpacity>
 
@@ -52,18 +52,23 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
     paddingHorizontal: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
     paddingBottom: 32,
+    alignItems: 'center',
+    paddingTop: 24,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#000',
-    marginTop: 60,
+    marginTop: 20,
+    textAlign: 'center',
   },
   imageContainer: {
     alignItems: 'center',
@@ -76,18 +81,25 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 16,
     color: '#000',
-    marginBottom: 24,
+    marginBottom: 20,
+    textAlign: 'center',
+    paddingHorizontal: 12,
   },
   enableButton: {
     backgroundColor: '#2d5a27',
-    borderRadius: 12,
-    paddingVertical: 16,
+    borderRadius: 28,
+    paddingVertical: 10,
+    paddingHorizontal: 18,
     alignItems: 'center',
+    minWidth: 160,
+  },
+  disabledButton: {
+    opacity: 0.7,
   },
   enableText: {
     color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: 14,
+    fontWeight: '600',
   },
   laterText: {
     textAlign: 'center',

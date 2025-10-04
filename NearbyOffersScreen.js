@@ -1,8 +1,8 @@
 import React, { useMemo, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, StatusBar, ScrollView, TouchableOpacity, Image, TextInput, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, StatusBar, ScrollView, TouchableOpacity, Image, TextInput, RefreshControl, Alert } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 
-export default function NearbyOffersScreen({ onBack, onOpenMap, onOpenMenus, userLocation, createdBaskets = [], onNavigateHome, onNavigatePanier, onNavigateProfil, onRefresh, cartItems = [], onNavigateToOrderConfirmation }) {
+export default function NearbyOffersScreen({ onBack, onOpenMap, onOpenMenus, userLocation, createdBaskets = [], onNavigateHome, onNavigatePanier, onNavigateProfil, onRefresh, cartItems = [], onNavigateToOrderConfirmation, onRequestLocation }) {
   const [isSearching, setIsSearching] = useState(false);
   const [query, setQuery] = useState('');
   const [refreshing, setRefreshing] = useState(false);
@@ -139,6 +139,26 @@ export default function NearbyOffersScreen({ onBack, onOpenMap, onOpenMenus, use
       >
         <Text style={styles.title}>Paniers autour de moi</Text>
 
+        {!userLocation?.coords && (
+          <View style={styles.locationPrompt}>
+            <Text style={styles.promptText}>Activez la localisation pour voir les paniers proches.</Text>
+            <TouchableOpacity
+              style={styles.enableButtonPrompt}
+              onPress={() => {
+                if (typeof onRequestLocation === 'function') {
+                  onRequestLocation();
+                } else if (onOpenMap) {
+                  onOpenMap(itemsWithDistance, userLocation);
+                } else {
+                  Alert.alert('Activer la localisation', "Veuillez activer la localisation dans les paramètres ou via l'application.");
+                }
+              }}
+            >
+              <Text style={styles.enableButtonPromptText}>Activer la localisation</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
         {userLocation?.coords && (
           <View style={styles.locationInfo}>
             <MaterialIcons name="location-on" size={16} color="#2d5a27" />
@@ -177,6 +197,17 @@ export default function NearbyOffersScreen({ onBack, onOpenMap, onOpenMenus, use
           <TouchableOpacity
             style={styles.mapButton}
             onPress={() => {
+              if (!userLocation?.coords) {
+                Alert.alert(
+                  'Localisation requise',
+                  'Pour voir la carte, veuillez activer la localisation.',
+                  [
+                    { text: 'Annuler', style: 'cancel' },
+                    { text: 'Activer', onPress: () => { if (typeof onRequestLocation === 'function') onRequestLocation(); else if (onOpenMap) onOpenMap(itemsWithDistance, userLocation); } }
+                  ]
+                );
+                return;
+              }
               onOpenMap?.(itemsWithDistance, userLocation);
             }}
           >
@@ -199,7 +230,7 @@ export default function NearbyOffersScreen({ onBack, onOpenMap, onOpenMenus, use
               <View style={styles.cardHeader}>
                 <Text style={styles.cardTitle}>{shop.name}</Text>
                 <View style={styles.badgeContainer}>
-                  {index < 3 && (
+                  {userLocation?.coords && index < 3 && (
                     <View style={styles.closestBadge}>
                       <Text style={styles.closestText}>Proche</Text>
                     </View>
@@ -214,10 +245,12 @@ export default function NearbyOffersScreen({ onBack, onOpenMap, onOpenMenus, use
               <Text style={styles.cardCategory}>{shop.category}</Text>
               <Text style={styles.cardSub}>{shop.packs} packs à récupérer après 18h</Text>
               <View style={styles.cardFooter}>
-                <View style={styles.distanceContainer}>
-                  <MaterialIcons name="location-on" size={16} color="#2d5a27" />
-                  <Text style={styles.distanceText}>{shop.distance}</Text>
-                </View>
+                {userLocation?.coords && (
+                  <View style={styles.distanceContainer}>
+                    <MaterialIcons name="location-on" size={16} color="#2d5a27" />
+                    <Text style={styles.distanceText}>{shop.distance}</Text>
+                  </View>
+                )}
                 <TouchableOpacity style={styles.menuButton} onPress={() => onOpenMenus?.(shop)}>
                   <Text style={styles.menuButtonText}>Voir les menus</Text>
                 </TouchableOpacity>
@@ -287,6 +320,27 @@ const styles = StyleSheet.create({
     color: '#2d5a27',
     fontWeight: '600',
     fontSize: 14,
+  },
+  locationPrompt: {
+    alignItems: 'center',
+    marginVertical: 12,
+  },
+  promptText: {
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  enableButtonPrompt: {
+    backgroundColor: '#2d5a27',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  enableButtonPromptText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 15,
   },
   bottomHeader: {
     position: 'absolute',

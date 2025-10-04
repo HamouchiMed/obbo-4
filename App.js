@@ -34,6 +34,7 @@ export default function App() {
   const [mapProps, setMapProps] = useState({ items: [], userLocation: null });
   const [menuProps, setMenuProps] = useState({ shop: null });
   const [userLocation, setUserLocation] = useState(null);
+  const [userProfile, setUserProfile] = useState(null);
   const [cartItems, setCartItems] = useState([]);
   const [createdBaskets, setCreatedBaskets] = useState([]);
   const [editingBasket, setEditingBasket] = useState(null);
@@ -127,7 +128,11 @@ export default function App() {
     return (
       <ClientAuthScreen
         onBack={handleBackToUserType}
-        onLoginSuccess={() => setCurrentScreen('locationPerm')}
+        onLoginSuccess={(profile) => {
+          // store profile if provided
+          if (profile) setUserProfile(profile);
+          setCurrentScreen('locationPerm');
+        }}
       />
     );
   }
@@ -217,6 +222,7 @@ export default function App() {
           setMapProps({ items, userLocation });
           setCurrentScreen('map');
         }}
+        onRequestLocation={() => setCurrentScreen('locationPerm')}
         onOpenMenus={(shop) => {
           setMenuProps({ shop });
           setCurrentScreen('menus');
@@ -562,8 +568,8 @@ export default function App() {
             <View style={styles.profileAvatar}>
               <MaterialIcons name="person" size={48} color="#2d5a27" />
             </View>
-            <Text style={styles.profileName}>Utilisateur Obbo</Text>
-            <Text style={styles.profileEmail}>user@obbo.com</Text>
+            <Text style={styles.profileName}>{userProfile?.name || userProfile?.given_name || 'Utilisateur Obbo'}</Text>
+            <Text style={styles.profileEmail}>{userProfile?.email || userProfile?.email_address || 'user@obbo.com'}</Text>
             
             <View style={styles.profileStats}>
               <View style={styles.statItem}>

@@ -1,7 +1,8 @@
-  import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
   import {
     View,
     Text,
+    Alert,
     StyleSheet,
     TouchableOpacity,
     TextInput,
@@ -13,6 +14,7 @@
   import { MaterialIcons } from '@expo/vector-icons';
   import * as WebBrowser from 'expo-web-browser';
   import * as Google from 'expo-auth-session/providers/google';
+  import { makeRedirectUri } from 'expo-auth-session';
   import { api } from './utils/config';
 
   WebBrowser.maybeCompleteAuthSession();
@@ -32,13 +34,26 @@
       iosClientId: 'YOUR_IOS_GOOGLE_CLIENT_ID',
       androidClientId: 'YOUR_ANDROID_GOOGLE_CLIENT_ID',
       webClientId: 'YOUR_WEB_GOOGLE_CLIENT_ID',
+      scopes: ['profile', 'email'],
+      redirectUri: makeRedirectUri({ useProxy: true }),
     });
 
     const handleGoogleLogin = async () => {
+      // Basic developer check: ensure client IDs are configured
+      const placeholder = (id) => !id || id.includes('YOUR_');
+      if (placeholder(request?.config?.expoClientId) || placeholder(request?.config?.webClientId)) {
+        Alert.alert(
+          'Google OAuth non configuré',
+          'Veuillez configurer vos client IDs Google dans le code (expoClientId / webClientId / iosClientId / androidClientId).'
+        );
+        return;
+      }
+
       try {
         await promptAsync({ useProxy: true });
       } catch (e) {
         console.warn('Google auth error', e);
+        Alert.alert('Erreur Google', 'Impossible de démarrer l\'authentification Google.');
       }
     };
 
@@ -46,32 +61,81 @@
       if (response?.type === 'success') {
         const { authentication } = response;
         console.log('Google authenticated', authentication);
-        // TODO: send token to backend or proceed to app
+
+        // Use an inner async function so we can use await here
+        (async () => {
+          try {
+            const res = await fetch('https://www.googleapis.com/userinfo/v2/me', {
+              headers: { Authorization: `Bearer ${authentication.accessToken}` }
+            });
+            const profile = await res.json();
+            console.log('Google profile', profile);
+            // TODO: send token/profile to backend to create or login user
+            setMessage('Connexion Google réussie');
+            onLoginSuccess && onLoginSuccess(profile);
+          } catch (e) {
+            console.warn('Failed to fetch Google profile', e);
+            Alert.alert('Erreur', 'Impossible de récupérer les informations Google.');
+          }
+        })();
       }
     }, [response]);
 
     const handleSubmit = async () => {
+      // Validation: ensure required fields are provided
+      if (isLogin) {
+        // For login, require password and either email or phone depending on mode
+        if ((usePhone ? !phone : !email) || !password) {
+          Alert.alert(
+            'Connexion requise',
+            "Veuillez vous connecter ou vous inscrire d'abord en fournissant un email/numéro et un mot de passe.",
+          );
+          return;
+        }
+      } else {
+        // For signup, require name, password and either email or phone
+        if (!name || (usePhone ? !phone : !email) || !password) {
+          Alert.alert(
+            'Inscription requise',
+            "Veuillez remplir tous les champs (nom, email/numéro et mot de passe) pour vous inscrire.",
+          );
+          return;
+        }
+      }
+
+      // MOCK: Always succeed for testing navigation
+      console.log('Login/SignUp success! (mocked)');
+      // Build a lightweight profile object from available fields
+      const profile = {
+        email: usePhone ? undefined : email,
+        phone: usePhone ? phone : undefined,
+        name: name || undefined,
+        given_name: name ? name.split(' ')[0] : undefined,
+      };
+      onLoginSuccess && onLoginSuccess(profile);
+      return;
+      // --- Remove the above lines and restore API logic when ready ---
+      /*
       if (isLogin) {
         try {
           const loginData = {
             password,
             ...(usePhone ? { phone } : { email })
           };
-          
           const res = await fetch(api('/api/auth/login'), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(loginData)
           });
-          
           const data = await res.json();
           if (data?.success) {
+            console.log('Login/SignUp success!');
             onLoginSuccess && onLoginSuccess();
           } else {
             setMessage(data?.message || 'Erreur de connexion');
           }
         } catch (e) {
-          setMessage('Erreur réseau');
+          setMessage('');
         }
       } else {
         try {
@@ -82,28 +146,23 @@
             userType: 'client',
             ...(usePhone ? { phone } : { email })
           };
-          
           const res = await fetch(api('/api/auth/register'), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(registerData)
           });
-          
           const data = await res.json();
           if (data?.success) {
-            setMessage('Inscription réussie ! Vous pouvez maintenant vous connecter.');
-            setIsLogin(true);
-            setEmail('');
-            setPhone('');
-            setPassword('');
-            setName('');
+            console.log('Login/SignUp success!');
+            onLoginSuccess && onLoginSuccess();
           } else {
             setMessage(data?.message || 'Erreur d\'inscription');
           }
         } catch (e) {
-          setMessage('Erreur réseau');
+          setMessage('');
         }
       }
+      */
     };
 
     const handleForgotPassword = async () => {
