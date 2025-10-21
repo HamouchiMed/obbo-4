@@ -13,6 +13,7 @@ const authRoutes = require('./routes/auth');
 const basketRoutes = require('./routes/baskets');
 const userRoutes = require('./routes/users');
 const offerRoutes = require('./routes/offers');
+const realtimeRoutes = require('./routes/realtime');
 
 // Import middleware
 const errorHandler = require('./middleware/errorHandler');
@@ -57,6 +58,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/baskets', authenticateToken, basketRoutes);
 app.use('/api/users', authenticateToken, userRoutes);
 app.use('/api/offers', offerRoutes);
+app.use('/api/realtime', realtimeRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -79,6 +81,13 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => {
     console.log('Client disconnected:', socket.id);
   });
+
+  // Relay basket decisions from admin to all clients (or specific rooms)
+  socket.on('basket-decision', (data) => {
+    console.log('Received basket-decision from', socket.id, data);
+    // broadcast to everyone (in production target the dealer using rooms)
+    io.emit('basket-decision', data);
+  });
 });
 
 // Make io available to routes
@@ -96,6 +105,7 @@ app.use('*', (req, res) => {
 });
 
 // Database connection
+console.log('Using MONGODB_URI:', process.env.MONGODB_URI);
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/obbo', {
   useNewUrlParser: true,
   useUnifiedTopology: true,

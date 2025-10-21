@@ -1,0 +1,205 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Utilisateur - Détails</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root { --brand: #1f7a3d; --brand-dark: #16592a; }
+  </style>
+</head>
+<body class="h-screen bg-gray-100 font-sans text-gray-800">
+  <div class="flex h-full">
+    <aside class="w-64 bg-gradient-to-b from-green-700 to-green-600 text-white p-6 flex flex-col">
+      <div class="text-2xl font-bold mb-6">Obbo</div>
+      <nav class="flex-1">
+        <a class="block py-2 px-3 rounded hover:bg-white/10 mb-1" href="index.html">Dashboards</a>
+        <a class="block py-2 px-3 rounded hover:bg-white/10 mb-1" href="merchants.html">Commerçants</a>
+        <a class="block py-2 px-3 rounded hover:bg-white/10 mb-1" href="orders.html">Commandes</a>
+        <a class="block py-2 px-3 rounded hover:bg-white/10 mb-1" href="users.html">Utilisateurs</a>
+      </nav>
+      <div class="mt-6 text-sm opacity-90">Admin • Obbo</div>
+    </aside>
+
+    <div class="flex-1 p-6 overflow-auto">
+      <header class="flex items-center justify-between mb-6">
+        <div>
+          <h1 id="userName" class="text-2xl font-semibold">Utilisateur</h1>
+          <p id="userSub" class="text-sm text-gray-600">Détails de l'utilisateur</p>
+        </div>
+        <div class="flex items-center gap-3">
+          <a href="users.html" class="px-3 py-2 bg-white text-green-700 rounded">Retour</a>
+        </div>
+      </header>
+
+      <div id="content" class="bg-white p-6 rounded shadow max-w-4xl">
+
+        <!-- KPIs -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          <div class="p-4 bg-gray-50 rounded">
+            <div class="text-sm text-gray-500">Revenu total</div>
+            <div id="incomeAmount" class="text-2xl font-bold">-</div>
+          </div>
+          <div class="p-4 bg-gray-50 rounded">
+            <div class="text-sm text-gray-500">Croissance (7d)</div>
+            <div id="growthPct" class="text-2xl font-bold text-green-600">-</div>
+          </div>
+          <div class="p-4 bg-gray-50 rounded">
+            <div class="text-sm text-gray-500">Progression vers objectif</div>
+            <div class="mt-2">
+              <div class="w-full bg-gray-200 rounded h-3 overflow-hidden">
+                <div id="progressBar" class="h-3 bg-green-600" style="width:0%"></div>
+              </div>
+              <div id="progressPct" class="text-sm text-gray-600 mt-1">-</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mb-4">
+          <!-- smaller chart: reduced height -->
+          <canvas id="revenueChart" height="64" class="w-full bg-white rounded h-16"></canvas>
+        </div>
+
+        <div class="mb-4">
+          <div class="text-sm text-gray-500">Email</div>
+          <div id="userEmail" class="text-lg font-medium"></div>
+        </div>
+        <div class="mb-4">
+          <div class="text-sm text-gray-500">Rôle</div>
+          <div id="userRole" class="text-lg"></div>
+        </div>
+        <div class="mb-4">
+          <div class="text-sm text-gray-500">Statut</div>
+          <div id="userStatus" class="text-lg"></div>
+        </div>
+        <div id="extra" class="text-sm text-gray-600 mt-4"></div>
+      </div>
+
+      <footer class="mt-6 text-sm text-gray-500">© Obbo - Admin</footer>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    // Parse ?id=...
+    function qs(name){
+      const params = new URLSearchParams(window.location.search);
+      return params.get(name);
+    }
+
+    // mock fallback (same generation as users.js if no backend)
+    function mockUserFromId(id){
+      const idx = parseInt(id.replace(/[^0-9]/g,''),10) || 1;
+      return {
+        id: id,
+        name: `User ${idx}`,
+        email: `user${idx}@example.com`,
+        role: idx % 11 === 0 ? 'admin' : 'user',
+        active: idx % 7 !== 0
+      };
+    }
+
+    (function(){
+      const id = qs('id');
+      if(!id){
+        document.getElementById('content').innerHTML = '<div class="text-red-600">Aucun identifiant fourni.</div>';
+        return;
+      }
+
+      // Try to fetch real user from API if available
+      const base = window.API_BASE || 'http://localhost:5000';
+      fetch(`${base}/admin/users/${encodeURIComponent(id)}`)
+        .then(r=>{ if(!r.ok) throw new Error('no-api'); return r.json(); })
+        .then(u=> renderUser(u))
+        .catch(()=>{
+          // fallback to mock
+          const u = mockUserFromId(id);
+          renderUser(u);
+        });
+
+      function renderUser(u){
+        document.getElementById('userName').textContent = u.name || u.id;
+        document.getElementById('userSub').textContent = u.email || '';
+        document.getElementById('userEmail').textContent = u.email || '-';
+        document.getElementById('userRole').textContent = u.role || '-';
+        document.getElementById('userStatus').textContent = (u.active? 'Actif' : 'Inactif');
+        document.getElementById('extra').textContent = `ID: ${u.id}`;
+
+        // Metrics: either use u.metrics or build mock series
+        const metrics = u.metrics || generateMockMetrics(u.id);
+        renderMetrics(metrics);
+      }
+
+      // Create mock revenue timeseries for the last 30 days
+      function generateMockMetrics(id){
+        const seed = parseInt(id.replace(/[^0-9]/g,''),10) || 1;
+        const days = 30;
+        const base = 200 + (seed % 10) * 20; // base revenue
+        const series = [];
+        for(let i=0;i<days;i++){
+          // add some variation and trend
+          const noise = Math.round((Math.sin((i+seed)/5) + (Math.random()-0.5))*base*0.15);
+          const val = Math.max(0, Math.round(base + (i-days/2)*2 + noise));
+          series.push(val);
+        }
+        const total = series.reduce((a,b)=>a+b,0);
+        // growth = percent change between last 7 days and previous 7 days
+        const last7 = series.slice(-7).reduce((a,b)=>a+b,0);
+        const prev7 = series.slice(-14,-7).reduce((a,b)=>a+b,0) || 1;
+        const growth = ((last7 - prev7) / prev7) * 100;
+        return { series, total, growth };
+      }
+
+      let revenueChart = null;
+      function renderMetrics(metrics){
+        const incomeEl = document.getElementById('incomeAmount');
+        const growthEl = document.getElementById('growthPct');
+        const progressBar = document.getElementById('progressBar');
+        const progressPct = document.getElementById('progressPct');
+
+        // Format currency (DH)
+        const fmt = new Intl.NumberFormat('fr-FR');
+        incomeEl.textContent = fmt.format(metrics.total) + ' DH';
+
+        const g = Math.round(metrics.growth * 10) / 10;
+        growthEl.textContent = (g >= 0 ? '+' : '') + g + '%';
+        growthEl.className = 'text-2xl font-bold ' + (g >= 0 ? 'text-green-600' : 'text-red-600');
+
+        // progress towards an arbitrary target (for demo)
+        const target = Math.max(1000, Math.round(metrics.total * 1.5));
+        const pct = Math.min(100, Math.round((metrics.total / target) * 100));
+        progressBar.style.width = pct + '%';
+        progressPct.textContent = `${pct}% of ${fmt.format(target)} DH target`;
+
+        // render compact chart
+        const ctx = document.getElementById('revenueChart').getContext('2d');
+        const labels = metrics.series.map((_,i)=>`${i- (metrics.series.length-1)}d`);
+        if(revenueChart) revenueChart.destroy();
+        revenueChart = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels, datasets: [{
+              label: 'Revenu (DH)',
+              data: metrics.series,
+              borderColor: '#16a34a',
+              backgroundColor: 'rgba(16,163,74,0.06)',
+              fill: true,
+              tension: 0.3,
+              pointRadius: 0
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            aspectRatio: 4,
+            scales: { x: { display: false }, y: { display: false } },
+            plugins: { legend: { display: false } },
+            elements: { line: { borderWidth: 1.5 } }
+          }
+        });
+      }
+    })();
+  </script>
+</body>
+</html>

@@ -46,75 +46,89 @@ export default function DealerLoginScreen({ onBack, onGoToRegistration, onLoginS
     }
   };
 
+  const handleForgotPassword = async () => {
+    if (!email?.trim()) {
+      Alert.alert('Email requis', 'Veuillez saisir votre adresse email professionnelle dans le champ "Email professionnel", puis appuyez à nouveau sur "Mot de passe oublié ?".');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      // Simulate sending a reset link
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      Alert.alert('Email envoyé', `Un lien de réinitialisation a été envoyé à ${email}. Vérifiez votre boîte de réception.`);
+    } catch (err) {
+      Alert.alert('Erreur', 'Impossible d\'envoyer le lien de réinitialisation. Veuillez réessayer plus tard.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
-
-      <TouchableOpacity style={styles.backButton} onPress={onBack}>
-        <MaterialIcons name="arrow-back" size={24} color="#2d5a27" />
-      </TouchableOpacity>
-
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-        <View style={styles.header}>
-          <MaterialIcons name="store" size={60} color="#2d5a27" />
-          <Text style={styles.title}>Connexion Commerçant</Text>
-          <Text style={styles.subtitle}>Accédez à votre espace commerçant</Text>
+        <TouchableOpacity style={styles.backButton} onPress={onBack}>
+          <MaterialIcons name="arrow-back" size={22} color="#2d5a27" />
+        </TouchableOpacity>
+
+        <View style={styles.hero}>
+          <View style={styles.logoWrap}>
+            <MaterialIcons name="storefront" size={48} color="#fff" />
+          </View>
+          <Text style={styles.heroTitle}>Espace Commerçant</Text>
+          <Text style={styles.heroSubtitle}>Gérez vos paniers et commandes</Text>
         </View>
 
-        <View style={styles.form}>
-          <View style={styles.inputContainer}>
-            <MaterialIcons name="email" size={20} color="#666" style={styles.inputIcon} />
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Connexion</Text>
+
+          <View style={styles.inputRow}>
+            <MaterialIcons name="email" size={20} color="#9aa" style={styles.inputIcon} />
             <TextInput
               style={styles.input}
               placeholder="Email professionnel"
               value={email}
               onChangeText={setEmail}
-              placeholderTextColor="#999"
+              placeholderTextColor="#bbb"
               keyboardType="email-address"
               autoCapitalize="none"
               autoCorrect={false}
             />
           </View>
 
-          <View style={styles.inputContainer}>
-            <MaterialIcons name="lock" size={20} color="#666" style={styles.inputIcon} />
+          <View style={styles.inputRow}>
+            <MaterialIcons name="lock" size={20} color="#9aa" style={styles.inputIcon} />
             <TextInput
               style={styles.input}
               placeholder="Mot de passe"
               value={password}
               onChangeText={setPassword}
-              placeholderTextColor="#999"
+              placeholderTextColor="#bbb"
               secureTextEntry
               autoCapitalize="none"
               autoCorrect={false}
             />
           </View>
 
-          <TouchableOpacity style={styles.forgotPassword}>
+          <TouchableOpacity style={styles.forgotPassword} onPress={handleForgotPassword}>
             <Text style={styles.forgotPasswordText}>Mot de passe oublié ?</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity 
-            style={[styles.loginButton, isLoading && styles.loginButtonDisabled]} 
+          <TouchableOpacity
+            style={[styles.loginButton, isLoading && styles.loginButtonDisabled]}
             onPress={handleLogin}
             disabled={isLoading}
           >
-            {isLoading ? (
-              <Text style={styles.loginButtonText}>Connexion...</Text>
-            ) : (
-              <Text style={styles.loginButtonText}>Se connecter</Text>
-            )}
+            <Text style={styles.loginButtonText}>{isLoading ? 'Connexion...' : 'Se connecter'}</Text>
           </TouchableOpacity>
 
-          <View style={styles.divider}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>ou</Text>
-            <View style={styles.dividerLine} />
+          <View style={styles.footerRow}>
+            <Text style={styles.footerText}>Pas de compte ?</Text>
+            <TouchableOpacity onPress={onGoToRegistration}>
+              <Text style={styles.signupLink}>Créer un compte commerçant</Text>
+            </TouchableOpacity>
           </View>
-
-          <TouchableOpacity style={styles.signupButton} onPress={onGoToRegistration}>
-            <Text style={styles.signupButtonText}>Créer un compte commerçant</Text>
-          </TouchableOpacity>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -140,97 +154,104 @@ const styles = StyleSheet.create({
     zIndex: 10,
     padding: 10,
   },
-  header: {
+  hero: {
     alignItems: 'center',
-    marginTop: 100,
-    marginBottom: 40,
+    marginTop: 24,
+    marginBottom: 18,
   },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#2d5a27',
-    marginTop: 16,
-    marginBottom: 8,
+  logoWrap: {
+    width: 84,
+    height: 84,
+    borderRadius: 22,
+    backgroundColor: '#2d5a27',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+    elevation: 4,
   },
-  subtitle: {
-    fontSize: 16,
+  heroTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#223',
+  },
+  heroSubtitle: {
+    fontSize: 13,
     color: '#666',
-    textAlign: 'center',
+    marginTop: 6,
   },
-  form: {
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 18,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
     width: '100%',
+    maxWidth: 420,
+    alignSelf: 'center',
   },
-  inputContainer: {
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 12,
+    color: '#222',
+  },
+  inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#fafafa',
     borderRadius: 12,
-    marginBottom: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 4,
+    marginBottom: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     borderWidth: 1,
-    borderColor: '#e0e0e0',
+    borderColor: '#f0f0f0',
   },
   inputIcon: {
-    marginRight: 12,
+    marginRight: 10,
   },
   input: {
     flex: 1,
-    fontSize: 16,
+    fontSize: 15,
     color: '#333',
-    paddingVertical: 12,
+    paddingVertical: 6,
   },
   forgotPassword: {
     alignSelf: 'flex-end',
-    marginBottom: 24,
+    marginBottom: 12,
   },
   forgotPasswordText: {
     color: '#2d5a27',
-    fontSize: 14,
-    fontWeight: '500',
+    fontSize: 13,
+    fontWeight: '600',
   },
   loginButton: {
     backgroundColor: '#2d5a27',
     borderRadius: 12,
-    paddingVertical: 16,
+    paddingVertical: 12,
     alignItems: 'center',
-    marginBottom: 24,
-    elevation: 2,
+    marginTop: 8,
+    marginBottom: 8,
   },
   loginButtonDisabled: {
-    backgroundColor: '#ccc',
+    backgroundColor: '#cfcfcf',
   },
   loginButtonText: {
     color: '#ffffff',
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: 16,
+    fontWeight: '700',
   },
-  divider: {
+  footerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 24,
+    justifyContent: 'center',
+    marginTop: 12,
   },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#e0e0e0',
-  },
-  dividerText: {
-    marginHorizontal: 16,
-    color: '#666',
-    fontSize: 14,
-  },
-  signupButton: {
-    backgroundColor: 'transparent',
-    borderWidth: 2,
-    borderColor: '#2d5a27',
-    borderRadius: 12,
-    paddingVertical: 16,
-    alignItems: 'center',
-  },
-  signupButtonText: {
-    color: '#2d5a27',
-    fontSize: 16,
-    fontWeight: '600',
-  },
+  footerText: { color: '#666', marginRight: 8 },
+  signupLink: { color: '#2d5a27', fontWeight: '700' },
+  scrollView: { flex: 1 },
+  scrollContent: { flexGrow: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 18, paddingBottom: 40 },
+  backButton: { position: 'absolute', top: 18, left: 18, zIndex: 10, padding: 8 },
 });

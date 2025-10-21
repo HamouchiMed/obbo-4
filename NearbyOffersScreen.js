@@ -1,11 +1,12 @@
 import React, { useMemo, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, StatusBar, ScrollView, TouchableOpacity, Image, TextInput, RefreshControl, Alert } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, StatusBar, ScrollView, TouchableOpacity, Image, TextInput, RefreshControl, Alert, Share } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 
 export default function NearbyOffersScreen({ onBack, onOpenMap, onOpenMenus, userLocation, createdBaskets = [], onNavigateHome, onNavigatePanier, onNavigateProfil, onRefresh, cartItems = [], onNavigateToOrderConfirmation, onRequestLocation }) {
   const [isSearching, setIsSearching] = useState(false);
   const [query, setQuery] = useState('');
   const [refreshing, setRefreshing] = useState(false);
+  const [activeFilter, setActiveFilter] = useState('Tous'); // Tous | Proches | Promos | Bio | Boulangerie | Café | Snack | Restaurant
 
   const items = useMemo(
     () => [
@@ -109,10 +110,59 @@ export default function NearbyOffersScreen({ onBack, onOpenMap, onOpenMenus, use
 
   const itemsWithDistance = getItemsWithDistance();
 
+  const [favorites, setFavorites] = useState({}); // track favorites by shop.name
+
+  const toggleFavorite = (shop) => {
+    setFavorites(prev => {
+      const next = { ...prev };
+      if (next[shop.name]) delete next[shop.name];
+      else next[shop.name] = true;
+      return next;
+    });
+  };
+
+  const handleShare = async (shop) => {
+    try {
+      const title = shop.menus?.[0]?.title || shop.name;
+      const text = `Découvrez ${shop.name} - ${title} sur Obbo.`;
+      await Share.share({ message: text });
+    } catch (err) {
+      Alert.alert('Partager', 'Impossible d\'ouvrir le partage.');
+    }
+  };
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return itemsWithDistance;
-    return itemsWithDistance.filter((it) => 
+    let list = itemsWithDistance;
+    // Apply chip-based filter first
+    switch (activeFilter) {
+      case 'Proches':
+        list = list.filter(i => (i.distanceValue || 9999) <= 2.5); // within 2.5 km
+        break;
+      case 'Promos':
+        // simple heuristic: promos are created baskets or price under 20
+        list = list.filter(i => i.isCreatedBasket || (i.menus?.some(m => (Number(m.price) || 0) < 20)));
+        break;
+      case 'Bio':
+        list = list.filter(i => (i.category || '').toLowerCase().includes('bio'));
+        break;
+      case 'Boulangerie':
+        list = list.filter(i => (i.category || '').toLowerCase().includes('boulanger'));
+        break;
+      case 'Café':
+        list = list.filter(i => (i.category || '').toLowerCase().includes('café') || (i.category || '').toLowerCase().includes('cafe'));
+        break;
+      case 'Snack':
+      case 'Restaurant':
+        list = list.filter(i => (i.category || '').toLowerCase().includes('snack') || (i.category || '').toLowerCase().includes('restaurant'));
+        break;
+      default:
+        // 'Tous' -> no filter
+        break;
+    }
+
+    if (!q) return list;
+    return list.filter((it) => 
       it.name.toLowerCase().includes(q) || 
       it.category.toLowerCase().includes(q)
     );
@@ -126,6 +176,15 @@ export default function NearbyOffersScreen({ onBack, onOpenMap, onOpenMenus, use
       setRefreshing(false);
     }
   }, [onRefresh]);
+
+  // Hide specific menu items for certain retailers (e.g., remove 'Panier Bio' and 'Panier anti-gaspi')
+  const shouldHideMenuForShop = (shopName, menuTitle) => {
+    if (!shopName || !menuTitle) return false;
+    // shops to apply the hide rule to
+    const shopMatch = /(aswak|assalam|carrefour)/i.test(shopName);
+    const menuMatch = /panier\s*(bio|anti[-\s]?gaspi|antigaspi|anti-gaspi)/i.test(menuTitle);
+    return shopMatch && menuMatch;
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -216,13 +275,33 @@ export default function NearbyOffersScreen({ onBack, onOpenMap, onOpenMenus, use
           </TouchableOpacity>
         </View>
 
+        {/* Filters */}
+        <View style={styles.filtersRow}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 6 }}>
+            {['Tous', 'Proches', 'Promos', 'Bio', 'Boulangerie', 'Café', 'Snack', 'Restaurant'].map((f) => (
+              <TouchableOpacity
+                key={f}
+                style={[styles.filterChip, activeFilter === f && styles.activeFilterChip]}
+                onPress={() => setActiveFilter(f)}
+              >
+                <Text style={[styles.filterChipText, activeFilter === f && styles.activeFilterChipText]}>{f}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+
         {/* Cards */}
         {filtered.map((shop, index) => (
-          <View key={shop.name} style={[
-            styles.card,
-            index < 3 && styles.highlightedCard,
-            shop.isCreatedBasket && styles.createdBasketCard
-          ]}>
+          <TouchableOpacity
+            key={`${shop.name}_${index}`}
+            activeOpacity={0.9}
+            style={[
+              styles.card,
+              index < 3 && styles.highlightedCard,
+              shop.isCreatedBasket && styles.createdBasketCard
+            ]}
+            onPress={() => onOpenMenus?.(shop)}
+          >
             <View style={styles.logoPlaceholder}>
               <Image source={require('./assets/obbo.png')} style={{ width: 48, height: 48 }} resizeMode="contain" />
             </View>
@@ -240,10 +319,30 @@ export default function NearbyOffersScreen({ onBack, onOpenMap, onOpenMenus, use
                       <Text style={styles.newText}>Nouveau</Text>
                     </View>
                   )}
+                  {/* action icons */}
+                  <View style={styles.actionsContainer}>
+                    <TouchableOpacity onPress={() => toggleFavorite(shop)} style={styles.actionButton}>
+                      <MaterialIcons name={favorites[shop.name] ? 'favorite' : 'favorite-border'} size={18} color={favorites[shop.name] ? '#ff6b6b' : '#777'} />
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => handleShare(shop)} style={styles.actionButton}>
+                      <MaterialIcons name="share" size={18} color="#777" />
+                    </TouchableOpacity>
+                  </View>
                 </View>
               </View>
               <Text style={styles.cardCategory}>{shop.category}</Text>
-              <Text style={styles.cardSub}>{shop.packs} packs à récupérer après 18h</Text>
+              <Text style={styles.cardSub}>{shop.packs} packs · {shop.menus?.[0]?.pickupTime || ''}</Text>
+              {/* Menu preview */}
+              {shop.menus && shop.menus.length > 0 && (
+                <View style={styles.menuPreview}>
+                  {shop.menus.slice(0,2).map((m, mi) => (
+                    <View key={`${shop.name}_menu_${mi}`} style={styles.menuItem}>
+                      <Text style={styles.menuTitle} numberOfLines={1}>{m.title}</Text>
+                      <Text style={styles.menuMeta}>{m.remaining} left · {m.pickupTime}</Text>
+                    </View>
+                  ))}
+                </View>
+              )}
               <View style={styles.cardFooter}>
                 {userLocation?.coords && (
                   <View style={styles.distanceContainer}>
@@ -251,12 +350,14 @@ export default function NearbyOffersScreen({ onBack, onOpenMap, onOpenMenus, use
                     <Text style={styles.distanceText}>{shop.distance}</Text>
                   </View>
                 )}
-                <TouchableOpacity style={styles.menuButton} onPress={() => onOpenMenus?.(shop)}>
-                  <Text style={styles.menuButtonText}>Voir les menus</Text>
-                </TouchableOpacity>
+                <View style={styles.rightFooter}>
+                  <TouchableOpacity style={styles.menuButton} onPress={() => onOpenMenus?.(shop)}>
+                    <Text style={styles.menuButtonText}>Voir les menus</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             </View>
-          </View>
+          </TouchableOpacity>
         ))}
 
         {filtered.length === 0 && (
@@ -303,17 +404,24 @@ const styles = StyleSheet.create({
     marginVertical: 12,
     color: '#000',
   },
+  headerBlock: {
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  subtitle: {
+    fontSize: 12,
+    color: '#6b7a6b',
+    textAlign: 'center',
+    marginBottom: 6,
+  },
   locationInfo: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#e8f5e8',
     paddingVertical: 8,
-    paddingHorizontal: 12,
+    paddingHorizontal: 2,
     borderRadius: 20,
-    marginBottom: 16,
-    alignSelf: 'center',
-    gap: 12,
+    
   },
   locationText: {
     marginLeft: 4,
@@ -379,6 +487,29 @@ const styles = StyleSheet.create({
     gap: 12,
     marginVertical: 8,
   },
+  filtersRow: {
+    marginVertical: 8,
+  },
+  filterChip: {
+    backgroundColor: '#f3faf3',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginHorizontal: 6,
+    borderWidth: 1,
+    borderColor: '#e6f3e6',
+  },
+  filterChipText: {
+    color: '#2d5a27',
+    fontWeight: '600',
+  },
+  activeFilterChip: {
+    backgroundColor: '#2d5a27',
+    borderColor: '#2d5a27',
+  },
+  activeFilterChipText: {
+    color: '#fff',
+  },
   searchBar: {
     flex: 1,
     flexDirection: 'row',
@@ -433,11 +564,16 @@ const styles = StyleSheet.create({
   },
   card: {
     flexDirection: 'row',
-    backgroundColor: '#f1f3f5',
+    backgroundColor: '#fff',
     borderRadius: 16,
     padding: 12,
     marginTop: 12,
     gap: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 3,
   },
   highlightedCard: {
     backgroundColor: '#fff3e0',
@@ -475,6 +611,7 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 12,
     fontWeight: 'bold',
+    left: 11,
   },
   cardCategory: {
     fontSize: 14,
@@ -490,6 +627,49 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+  },
+  rightFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  actionsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: 8,
+  },
+  actionButton: {
+    marginLeft: 6,
+    padding: 6,
+    borderRadius: 8,
+  },
+  menuPreview: {
+    marginTop: 6,
+    backgroundColor: '#fbfbfb',
+    borderRadius: 8,
+    padding: 6,
+  },
+  menuItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 2,
+  },
+  menuTitle: {
+    flex: 1,
+    color: '#222',
+    fontWeight: '600',
+    fontSize: 13,
+  },
+  menuMeta: {
+    marginLeft: 6,
+    color: '#777',
+    fontSize: 11,
+  },
+  cardPrice: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#2d5a27',
   },
   distanceContainer: {
     flexDirection: 'row',

@@ -1,17 +1,17 @@
 import React from 'react';
-import { View, Text, SafeAreaView, StatusBar, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, StatusBar, TouchableOpacity, StyleSheet, ScrollView, Platform } from 'react-native';
+import SafeAreaWrapper from './utils/SafeAreaWrapper';
 import { MaterialIcons } from '@expo/vector-icons';
 
 export default function DealerProfileScreen({ onNavigateHome, onNavigateBaskets, onNavigateOrders, onLogout }) {
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaWrapper style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
 
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Mon Profil Commerçant</Text>
       </View>
-
-      <View style={styles.content}>
+      <ScrollView style={styles.content} contentContainerStyle={{ paddingBottom: Platform.OS === 'android' ? 140 : 100 }} showsVerticalScrollIndicator={false}>
         <View style={styles.profileCard}>
           <View style={styles.avatar}>
             <MaterialIcons name="store" size={48} color="#2d5a27" />
@@ -64,9 +64,9 @@ export default function DealerProfileScreen({ onNavigateHome, onNavigateBaskets,
             <MaterialIcons name="chevron-right" size={24} color="#ccc" />
           </TouchableOpacity>
         </View>
-      </View>
+  </ScrollView>
 
-      <View style={styles.bottomHeader}>
+  <View style={styles.bottomHeader}>
         <TouchableOpacity style={styles.headerItem} onPress={onNavigateHome}>
           <MaterialIcons name="home" size={22} color="#2d5a27" />
           <Text style={styles.headerItemText}>Home</Text>
@@ -84,7 +84,7 @@ export default function DealerProfileScreen({ onNavigateHome, onNavigateBaskets,
           <Text style={styles.activeHeaderItemText}>Profil</Text>
         </TouchableOpacity>
       </View>
-    </SafeAreaView>
+    </SafeAreaWrapper>
   );
 }
 

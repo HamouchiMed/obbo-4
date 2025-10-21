@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, StatusBar, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 
@@ -20,13 +20,34 @@ export default function MenuScreen({ onBack, shop, onAddToCart, cartItems = [], 
     );
   }
 
-  const handleReserve = (menuItem) => {
-    const itemToAdd = {
-      ...menuItem,
-      shopName: shop.name,
-      category: shop.category,
-    };
-    onAddToCart?.(itemToAdd);
+  // Local state for richer interactions
+  const [localMenus, setLocalMenus] = useState(shop?.menus ? [...shop.menus] : []);
+  const [quantities, setQuantities] = useState({});
+  const [expanded, setExpanded] = useState({});
+
+  const increaseQty = (idx) => setQuantities(q => ({ ...q, [idx]: (q[idx] || 1) + 1 }));
+  const decreaseQty = (idx) => setQuantities(q => ({ ...q, [idx]: Math.max(1, (q[idx] || 1) - 1) }));
+
+  const handleReserveWithQty = (menuItem, idx) => {
+    const qty = quantities[idx] || 1;
+    for (let i = 0; i < qty; i++) {
+      const itemToAdd = { ...menuItem, shopName: shop.name, category: shop.category };
+      onAddToCart?.(itemToAdd);
+    }
+  };
+
+  const toggleExpand = (idx) => setExpanded(e => ({ ...e, [idx]: !e[idx] }));
+
+  const addMoreSampleItems = () => {
+    const start = localMenus.length + 1;
+    const extras = Array.from({ length: 3 }).map((_, i) => ({
+      title: `Article supplémentaire ${start + i}`,
+      price: 10 + i,
+      remaining: 5,
+      pickupTime: 'ASAP',
+      description: 'Un petit complément proposé par le commerçant.'
+    }));
+    setLocalMenus(prev => [...prev, ...extras]);
   };
 
   return (
@@ -39,15 +60,17 @@ export default function MenuScreen({ onBack, shop, onAddToCart, cartItems = [], 
         <Text style={styles.headerTitle}>{shop.name} - Menus</Text>
         {cartItems.length > 0 && (
           <TouchableOpacity style={styles.basketButton} onPress={onNavigateToCart}>
-            <MaterialIcons name="shopping-basket" size={24} color="#2d5a27" />
+            <MaterialIcons name="shopping-basket" size={20} color="#2d5a27" />
             <Text style={styles.basketText}>Finaliser ma commande</Text>
           </TouchableOpacity>
         )}
       </View>
-      
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.shopInfo}>
           <View style={styles.shopLogo}>
+            {/* optional logo - keep a safe require path; if missing replace with a blank view */}
+            {/** Ensure asset path exists in project; otherwise this will throw at runtime */}
             <Image source={require('./assets/obbo.png')} style={styles.logo} resizeMode="contain" />
           </View>
           <View style={styles.shopDetails}>
@@ -57,28 +80,45 @@ export default function MenuScreen({ onBack, shop, onAddToCart, cartItems = [], 
           </View>
         </View>
 
-        <Text style={styles.menuTitle}>Menus disponibles</Text>
-        
-        {shop.menus?.map((menu, index) => (
-          <View key={index} style={styles.menuItem}>
-            <View style={styles.menuInfo}>
-              <Text style={styles.menuItemTitle}>{menu.title}</Text>
-              <Text style={styles.menuItemPrice}>{menu.price}€</Text>
-              <Text style={styles.menuItemDetails}>
-                {menu.remaining} restants • Récupération à {menu.pickupTime}
-              </Text>
+        <Text style={styles.sectionTitle}>Menus disponibles</Text>
+
+        {localMenus.map((m, i) => (
+          <View key={i} style={styles.card}>
+            <View style={styles.row}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.menuTitle}>{m.title}</Text>
+                <Text style={styles.menuMeta}>{m.remaining ?? '-'} restants • {m.pickupTime ?? '—'}</Text>
+                {expanded[i] ? <Text style={styles.description}>{m.description ?? 'Pas de description.'}</Text> : null}
+              </View>
+              <View style={{ alignItems: 'flex-end' }}>
+                <Text style={styles.price}>{m.price} DH</Text>
+                <View style={styles.qtyRow}>
+                  <TouchableOpacity style={styles.qtyBtn} onPress={() => decreaseQty(i)}>
+                    <Text style={styles.qtyText}>-</Text>
+                  </TouchableOpacity>
+                  <View style={styles.qtyValueBox}>
+                    <Text style={styles.qtyValue}>{quantities[i] || 1}</Text>
+                  </View>
+                  <TouchableOpacity style={styles.qtyBtn} onPress={() => increaseQty(i)}>
+                    <Text style={styles.qtyText}>+</Text>
+                  </TouchableOpacity>
+                </View>
+                <TouchableOpacity style={styles.reserveBtn} onPress={() => handleReserveWithQty(m, i)}>
+                  <Text style={styles.reserveText}>Ajouter</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.moreBtn} onPress={() => toggleExpand(i)}>
+                  <Text style={styles.moreText}>{expanded[i] ? 'Réduire' : 'Voir détails'}</Text>
+                </TouchableOpacity>
+              </View>
             </View>
-            <TouchableOpacity 
-              style={styles.reserveButton}
-              onPress={() => handleReserve(menu)}
-            >
-              <MaterialIcons name="shopping-cart" size={20} color="#fff" />
-              <Text style={styles.reserveButtonText}>Réserver</Text>
-            </TouchableOpacity>
           </View>
         ))}
 
-        {(!shop.menus || shop.menus.length === 0) && (
+        <TouchableOpacity style={styles.moreArticlesBtn} onPress={addMoreSampleItems}>
+          <Text style={styles.moreArticlesText}>Voir plus d'articles</Text>
+        </TouchableOpacity>
+
+        {(!localMenus || localMenus.length === 0) && (
           <View style={styles.emptyMenu}>
             <MaterialIcons name="restaurant-menu" size={48} color="#ccc" />
             <Text style={styles.emptyMenuText}>Aucun menu disponible</Text>
@@ -104,16 +144,15 @@ const styles = StyleSheet.create({
     borderBottomColor: '#e0e0e0',
   },
   backButton: {
-    marginRight: 15,
+    marginRight: 12,
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '700',
     color: '#000',
     flex: 1,
   },
   content: {
-    flex: 1,
     padding: 16,
   },
   placeholderText: {
@@ -143,109 +182,43 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
   },
-  shopDetails: {
-    flex: 1,
-  },
-  shopName: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 4,
-  },
-  shopCategory: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 2,
-  },
-  shopDistance: {
-    fontSize: 14,
-    color: '#2d5a27',
-    fontWeight: '600',
-  },
-  menuTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 16,
-  },
-  menuItem: {
-    flexDirection: 'row',
+  shopDetails: { flex: 1 },
+  shopName: { fontSize: 18, fontWeight: '700', color: '#333' },
+  shopCategory: { fontSize: 14, color: '#666' },
+  shopDistance: { fontSize: 14, color: '#2d5a27', fontWeight: '600' },
+  sectionTitle: { fontSize: 20, fontWeight: '700', color: '#333', marginBottom: 12, marginTop: 6 },
+  card: {
     backgroundColor: '#fff',
     borderRadius: 12,
-    padding: 16,
+    padding: 12,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#e0e0e0',
-    alignItems: 'center',
+    borderColor: '#e6e6e6',
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
     shadowRadius: 4,
-    elevation: 3,
+    elevation: 2,
   },
-  menuInfo: {
-    flex: 1,
-  },
-  menuItemTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 4,
-  },
-  menuItemPrice: {
-    fontSize: 16,
-    color: '#2d5a27',
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  menuItemDetails: {
-    fontSize: 14,
-    color: '#666',
-  },
-  reserveButton: {
-    backgroundColor: '#ff6b35',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  reserveButtonText: {
-    color: '#fff',
-    fontWeight: '600',
-    fontSize: 16,
-  },
-  emptyMenu: {
-    alignItems: 'center',
-    marginTop: 40,
-  },
-  emptyMenuText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#666',
-    marginTop: 12,
-  },
-  emptyMenuSubtext: {
-    fontSize: 14,
-    color: '#999',
-    marginTop: 4,
-  },
-  basketButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#e8f5e8',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    gap: 6,
-  },
-  basketText: {
-    color: '#2d5a27',
-    fontSize: 14,
-    fontWeight: '600',
-  },
+  row: { flexDirection: 'row', alignItems: 'center' },
+  menuTitle: { fontSize: 16, fontWeight: '700', color: '#222' },
+  menuMeta: { fontSize: 13, color: '#666', marginTop: 4 },
+  description: { marginTop: 8, color: '#555', fontSize: 13 },
+  price: { fontSize: 16, color: '#2d5a27', fontWeight: '700', marginBottom: 8 },
+  qtyRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
+  qtyBtn: { width: 34, height: 34, borderRadius: 8, backgroundColor: '#f0f0f0', alignItems: 'center', justifyContent: 'center' },
+  qtyText: { fontSize: 18, fontWeight: '700' },
+  qtyValueBox: { minWidth: 34, alignItems: 'center', justifyContent: 'center', marginHorizontal: 8 },
+  qtyValue: { fontSize: 16, fontWeight: '700' },
+  reserveBtn: { backgroundColor: '#2d9c2f', paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8 },
+  reserveText: { color: '#fff', fontWeight: '700' },
+  moreBtn: { marginTop: 6 },
+  moreText: { color: '#2d5a27', fontWeight: '600' },
+  moreArticlesBtn: { marginTop: 8, alignItems: 'center', padding: 12, borderRadius: 10, borderWidth: 1, borderColor: '#e6e6e6' },
+  moreArticlesText: { color: '#2d5a27', fontWeight: '700' },
+  emptyMenu: { alignItems: 'center', marginTop: 40 },
+  emptyMenuText: { fontSize: 18, fontWeight: '600', color: '#666', marginTop: 12 },
+  emptyMenuSubtext: { fontSize: 14, color: '#999', marginTop: 4 },
+  basketButton: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#e8f5e8', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20 },
+  basketText: { color: '#2d5a27', fontSize: 13, fontWeight: '700' },
 });

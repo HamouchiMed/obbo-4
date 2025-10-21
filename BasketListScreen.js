@@ -128,7 +128,7 @@ export default function BasketListScreen({ onBack, createdBaskets = [], onRefres
                         <Text style={[styles.statusBadge, status === 'active' ? styles.statusActive : styles.statusPaused]}>{status === 'active' ? 'Actif' : status === 'paused' ? 'En pause' : status}</Text>
                       </TouchableOpacity>
                     </View>
-                    <Text style={styles.basketPrice}>{basketData.price}€</Text>
+                    <Text style={styles.basketPrice}>{basketData.price} DH</Text>
                     <View style={styles.basketDetails}>
                       <View style={styles.detailItem}>
                         <MaterialIcons name="event" size={16} color="#666" />

@@ -80,6 +80,17 @@ const requireClient = (req, res, next) => {
   next();
 };
 
+// Check if user is admin
+const requireAdmin = (req, res, next) => {
+  if (!req.user || !req.user.isAdmin) {
+    return res.status(403).json({
+      success: false,
+      message: 'Admin access required'
+    });
+  }
+  next();
+};
+
 // Optional authentication (doesn't fail if no token)
 const optionalAuth = async (req, res, next) => {
   try {
@@ -124,6 +135,7 @@ module.exports = {
   authenticateToken,
   requireDealer,
   requireClient,
+  requireAdmin,
   optionalAuth,
   generateToken,
   generateRefreshToken

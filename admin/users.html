@@ -1,0 +1,66 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Utilisateurs - Admin (Mock)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root { --brand: #1f7a3d; --brand-dark: #16592a; }
+  </style>
+</head>
+<body class="h-screen bg-gray-100 font-sans text-gray-800">
+  <div class="flex h-full">
+    <!-- Sidebar -->
+    <aside class="w-64 bg-gradient-to-b from-green-700 to-green-600 text-white p-6 flex flex-col">
+      <div class="text-2xl font-bold mb-6">Obbo</div>
+      <nav class="flex-1">
+        <a class="block py-2 px-3 rounded hover:bg-white/10 mb-1" href="index.html">Dashboards</a>
+        <a class="block py-2 px-3 rounded hover:bg-white/10 mb-1" href="merchants.html">Commerçants</a>
+  <a class="block py-2 px-3 rounded hover:bg-white/10 mb-1" href="orders.html">Commandes</a>
+  <a class="block py-2 px-3 rounded hover:bg-white/10 mb-1" href="clients.html">Clients</a>
+  <a class="block py-2 px-3 rounded bg-white/10 mb-1" href="users.html">Utilisateurs</a>
+      </nav>
+      <div class="mt-6 text-sm opacity-90">Admin • Obbo</div>
+    </aside>
+
+    <!-- Main -->
+    <div class="flex-1 p-6 overflow-auto">
+      <header class="flex items-center justify-between mb-6">
+        <div>
+          <h1 class="text-2xl font-semibold">Utilisateurs</h1>
+          <p class="text-sm text-gray-600">Liste des utilisateurs</p>
+        </div>
+        <div class="flex items-center gap-3">
+          <input id="search" placeholder="Rechercher par nom ou email" class="border p-2 rounded mr-2" />
+          <button id="refresh" class="bg-white text-green-700 px-3 py-2 rounded">Actualiser</button>
+          <button id="trashBtn" class="bg-white text-red-600 px-3 py-2 rounded">Corbeille (<span id="trashCount">0</span>)</button>
+        </div>
+      </header>
+
+      <div id="list" class="space-y-2"></div>
+
+      <div class="mt-4 flex items-center justify-between">
+        <div id="pagination" class="flex gap-2"></div>
+        <div class="text-sm text-gray-500">Total: <span id="total"></span></div>
+      </div>
+
+      <footer class="mt-6 text-sm text-gray-500">© Obbo - Admin</footer>
+    </div>
+  </div>
+
+  <!-- Simple modal container for confirmations -->
+  <div id="modal" class="fixed inset-0 hidden items-center justify-center bg-black bg-opacity-40">
+    <div class="bg-white p-6 rounded shadow max-w-md w-full">
+      <div id="modalContent"></div>
+      <div class="mt-4 text-right">
+        <button id="modalCancel" class="px-3 py-2 mr-2">Annuler</button>
+        <button id="modalConfirm" class="bg-red-600 text-white px-3 py-2 rounded">Confirmer</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+  <script src="users.js"></script>
+</body>
+</html>

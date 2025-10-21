@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
-import { View, Text, SafeAreaView, StatusBar, TouchableOpacity, ScrollView, StyleSheet, Linking, Alert } from 'react-native';
+import { View, Text, StatusBar, TouchableOpacity, ScrollView, StyleSheet, Linking, Alert, Platform } from 'react-native';
+import SafeAreaWrapper from './utils/SafeAreaWrapper';
 import { MaterialIcons } from '@expo/vector-icons';
 
 export default function DealerOrdersScreen({
@@ -43,6 +44,32 @@ export default function DealerOrdersScreen({
     }
     return reservations.filter(r => r.status === activeFilter);
   }, [reservations, activeFilter]);
+
+  const formatTime = (dateString) => {
+    if (!dateString) return '—';
+    const d = new Date(dateString);
+    if (Number.isNaN(d.getTime())) return '—';
+    return d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+  };
+
+  const [expandedIds, setExpandedIds] = useState({});
+  const toggleExpand = (id) => setExpandedIds(prev => ({ ...prev, [id]: !prev[id] }));
+
+  // urgency: returns 'urgent' when reservation is within next 30 minutes,
+  // 'late' when reservation time is in the past and order not completed/picked/cancelled
+  const computeUrgency = (reservation) => {
+    if (!reservation || !reservation.reservedAt) return null;
+    const now = Date.now();
+    const t = new Date(reservation.reservedAt).getTime();
+    if (Number.isNaN(t)) return null;
+    // ignore completed/cancelled
+    const finished = ['picked_up', 'completed', 'cancelled'].includes(reservation.status);
+    if (finished) return null;
+    const diffMin = (t - now) / 60000; // minutes until reservedAt
+    if (diffMin <= 0) return 'late';
+    if (diffMin <= 30) return 'urgent';
+    return null;
+  };
 
   const updateStatus = (id, nextStatus) => {
     if (!onUpdateReservations) return;
@@ -125,7 +152,7 @@ export default function DealerOrdersScreen({
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaWrapper style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
 
       <View style={styles.header}>
@@ -147,7 +174,7 @@ export default function DealerOrdersScreen({
         })}
       </ScrollView>
 
-      <ScrollView style={styles.list} showsVerticalScrollIndicator={false}>
+  <ScrollView style={styles.list} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: Platform.OS === 'android' ? 140 : 120 }}>
         {filteredReservations.length === 0 ? (
           <View style={styles.emptyState}>
             <MaterialIcons name="receipt-long" size={64} color="#ccc" />
@@ -156,41 +183,72 @@ export default function DealerOrdersScreen({
           </View>
         ) : (
           <View>
-            {filteredReservations.map(res => (
-              <View key={res.id} style={styles.card}>
-                <View style={styles.cardRow}>
-                  <View style={styles.avatar}>
-                    <MaterialIcons name="person" size={28} color="#2d5a27" />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.customerName}>{res.customerName || 'Client'}</Text>
-                    <Text style={styles.metaText}>Tél: {res.customerPhone || '-'}</Text>
-                    <Text style={styles.metaText}>Réservé: {new Date(res.reservedAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</Text>
-                  </View>
-                  <View>
-                    <Text style={[styles.statusBadge, styles[`status_${(res.status || 'reserved').replace(/[^a-z_]/g, '')}`]]}>
-                      {(() => {
-                        switch (res.status) {
-                          case 'reserved': return 'Réservé';
-                          case 'confirmed': return 'Confirmé';
-                          case 'ready_for_pickup':
-                          case 'ready': return 'Prêt';
-                          case 'picked_up':
-                          case 'completed': return 'Retiré';
-                          case 'cancelled': return 'Annulé';
-                          default: return res.status || 'Réservé';
-                        }
-                      })()}
-                    </Text>
-                  </View>
-                </View>
+            {filteredReservations.map(res => {
+                const total = typeof res.total === 'number' ? res.total : (Array.isArray(res.items) ? res.items.reduce((s,i) => s + ((i.price||0) * (i.qty||1)), 0) : (res.amount || 0));
+                const itemsCount = Array.isArray(res.items) ? res.items.length : (res.itemCount || 1);
+                return (
+                  <View key={res.id} style={styles.card}>
+                    <View style={styles.cardRow}>
+                      <View style={styles.avatar}>
+                        <MaterialIcons name="person" size={26} color="#2d5a27" />
+                      </View>
+                      <View style={{ flex: 1, paddingRight: 8 }}>
+                        <Text style={styles.customerName}>{res.customerName || 'Client'}</Text>
+                        <Text style={styles.metaText}>Tél: {res.customerPhone || '-'}</Text>
+                        <Text style={styles.metaText}>Heure: {formatTime(res.reservedAt)}</Text>
+                        <Text style={styles.itemsText}>{itemsCount} article{itemsCount>1?'s':''} • {res.paymentMethod ? res.paymentMethod : '—'}</Text>
+                      </View>
 
-                {renderActions(res)}
-              </View>
-            ))}
+                      <View style={styles.rightColumn}>
+                        <Text style={styles.orderTotal}>{total} DH</Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                          {(() => {
+                            const urgency = computeUrgency(res);
+                            if (urgency === 'urgent') return <Text style={styles.urgentBadge}>Urgent</Text>;
+                            if (urgency === 'late') return <Text style={styles.lateBadge}>En retard</Text>;
+                            return null;
+                          })()}
+                          <Text style={[styles.statusBadge, styles[`status_${(res.status || 'reserved').replace(/[^a-z_]/g, '')}`]]}>
+                            {(() => {
+                              switch (res.status) {
+                                case 'reserved': return 'Réservé';
+                                case 'confirmed': return 'Confirmé';
+                                case 'ready_for_pickup':
+                                case 'ready': return 'Prêt';
+                                case 'picked_up':
+                                case 'completed': return 'Retiré';
+                                case 'cancelled': return 'Annulé';
+                                default: return res.status || 'Réservé';
+                              }
+                            })()}
+                          </Text>
+                        </View>
+                      </View>
+                    </View>
+
+                    {Array.isArray(res.items) && res.items.length > 0 && (
+                      <View style={styles.itemsContainerCollapse}>
+                        <ScrollView style={expandedIds[res.id] ? styles.itemsScrollOpen : styles.itemsScroll} nestedScrollEnabled>
+                          {res.items.map((it, ix) => (
+                            <View key={ix} style={styles.itemRow}>
+                              <Text style={styles.itemName}>{it.name || 'Article'}</Text>
+                              <Text style={styles.itemQty}>{(it.qty||1)}× {(it.price||0)} DH</Text>
+                            </View>
+                          ))}
+                        </ScrollView>
+                        <TouchableOpacity style={styles.expandToggle} onPress={() => toggleExpand(res.id)}>
+                          <Text style={styles.expandToggleText}>{expandedIds[res.id] ? 'Réduire' : 'Voir les articles'}</Text>
+                        </TouchableOpacity>
+                      </View>
+                    )}
+
+                    {renderActions(res)}
+                  </View>
+                );
+              })}
           </View>
         )}
-      </ScrollView>
+  </ScrollView>
 
       <View style={styles.bottomHeader}>
         <TouchableOpacity style={styles.headerItem} onPress={onNavigateHome}>
@@ -210,7 +268,7 @@ export default function DealerOrdersScreen({
           <Text style={styles.headerItemText}>Profil</Text>
         </TouchableOpacity>
       </View>
-    </SafeAreaView>
+    </SafeAreaWrapper>
   );
 }
 
@@ -314,7 +372,7 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: '#f8f9fa',
     borderRadius: 12,
-    padding: 12,
+    padding: 14,
     marginBottom: 12,
   },
   cardRow: {
@@ -338,6 +396,60 @@ const styles = StyleSheet.create({
   metaText: {
     fontSize: 12,
     color: '#666',
+  },
+  itemsText: {
+    fontSize: 12,
+    color: '#7a836f',
+    marginTop: 6,
+  },
+  itemsContainerCollapse: {
+    marginTop: 10,
+  },
+  itemsScroll: {
+    maxHeight: 0,
+    overflow: 'hidden',
+  },
+  itemsScrollOpen: {
+    maxHeight: 160,
+  },
+  itemRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  itemName: { color: '#333' },
+  itemQty: { color: '#666' },
+  expandToggle: { marginTop: 8, alignItems: 'center' },
+  expandToggleText: { color: '#2d5a27', fontWeight: '700' },
+  rightColumn: {
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+  },
+  orderTotal: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#2d5a27',
+    marginBottom: 6,
+  },
+  urgentBadge: {
+    backgroundColor: '#ffcf3d',
+    color: '#663c00',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 10,
+    fontWeight: '700',
+    fontSize: 12,
+  },
+  lateBadge: {
+    backgroundColor: '#ff4d4f',
+    color: '#fff',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 10,
+    fontWeight: '700',
+    fontSize: 12,
   },
   statusBadge: {
     paddingHorizontal: 10,

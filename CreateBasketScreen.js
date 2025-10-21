@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, StatusBar, TouchableOpacity, TextInput, Alert, Image } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, StatusBar, TouchableOpacity, TextInput, Alert, Image, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 
-export default function CreateBasketScreen({ onBack, onBasketCreated }) {
+export default function CreateBasketScreen({ onBack, onBasketCreated, dealerProfile }) {
   const [basketName, setBasketName] = useState('');
   const [price, setPrice] = useState('');
   const [collectionDate, setCollectionDate] = useState('');
@@ -114,91 +114,134 @@ export default function CreateBasketScreen({ onBack, onBasketCreated }) {
       createdAt: new Date(),
     };
 
-    onBasketCreated?.(basketData);
+  onBasketCreated?.(basketData);
+
+  // Send realtime notification to backend so admin web receives it
+  (async ()=>{
+    try{
+      // on Android emulator use 10.0.2.2 to reach host machine
+      const serverHost = Platform.OS === 'android' ? 'http://10.0.2.2:5000' : 'http://localhost:5000';
+      await fetch(serverHost + '/api/realtime/emit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          event: 'new-basket',
+          data: {
+            name: basketData.name,
+            price: basketData.price,
+            collectionDate: basketData.collectionDate,
+            collectionTime: basketData.collectionTime,
+            createdAt: basketData.createdAt,
+            dealer: {
+              name: dealerProfile?.profile?.businessName || dealerProfile?.name || 'Unknown',
+              email: dealerProfile?.email || ''
+            }
+          },
+          room: 'admin'
+        })
+      });
+    }catch(err){
+      console.warn('Failed to notify backend about new basket', err);
+    }
+  })();
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
-      
+
       <View style={styles.header}>
         <TouchableOpacity onPress={onBack} style={styles.backButton}>
-          <MaterialIcons name="arrow-back" size={24} color="#000" />
+          <MaterialIcons name="arrow-back" size={24} color="#1f2f1d" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Crée un panier</Text>
+        <View style={styles.headerTitles}>
+          <Text style={styles.headerTitle}>Créer un panier</Text>
+          <Text style={styles.headerSubtitle}>Attirez les clients avec une offre claire et une belle photo</Text>
+        </View>
       </View>
 
-      <View style={styles.content}>
-        <View style={styles.form}>
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Nom du panier</Text>
-            <TextInput
-              style={styles.input}
-              value={basketName}
-              onChangeText={setBasketName}
-              placeholder=""
-              placeholderTextColor="#999"
-            />
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Prix</Text>
-            <TextInput
-              style={styles.input}
-              value={price}
-              onChangeText={setPrice}
-              placeholder=""
-              placeholderTextColor="#999"
-              keyboardType="numeric"
-            />
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Date de collecte</Text>
-            <TextInput
-              style={styles.input}
-              value={collectionDate}
-              onChangeText={setCollectionDate}
-              placeholder=""
-              placeholderTextColor="#999"
-            />
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Heure de collecte</Text>
-            <TextInput
-              style={styles.input}
-              value={collectionTime}
-              onChangeText={setCollectionTime}
-              placeholder=""
-              placeholderTextColor="#999"
-            />
-          </View>
-
-          <View style={styles.imageSection}>
-            <Text style={styles.label}>Ajouter une photo</Text>
-            <TouchableOpacity style={styles.imageButton} onPress={handleImagePicker}>
-              {selectedImage ? (
-                <View style={styles.imagePreview}>
-                  <Image source={{ uri: selectedImage.uri }} style={styles.previewImage} />
-                  <View style={styles.imageOverlay}>
-                    <MaterialIcons name="check-circle" size={24} color="#2d5a27" />
-                    <Text style={styles.imageText}>Photo ajoutée</Text>
-                  </View>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }} keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}>
+        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+          <View style={styles.card}>
+            <View style={styles.form}>
+              <View style={styles.inputGroupRow}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.label}>Nom du panier</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={basketName}
+                    onChangeText={setBasketName}
+                    placeholder="Ex: Panier gourmand"
+                    placeholderTextColor="#bbb"
+                  />
                 </View>
-              ) : (
-                <View style={styles.imagePlaceholder}>
-                  <MaterialIcons name="camera-alt" size={32} color="#000" />
-                  <Text style={styles.placeholderText}>Appuyez pour ajouter une photo</Text>
-                  <Text style={styles.placeholderSubtext}>Caméra ou Galerie</Text>
+                <View style={{ width: 12 }} />
+                <View style={{ width: 120 }}>
+                  <Text style={styles.label}>Prix (DH)</Text>
+                  <TextInput
+                    style={styles.inputCompact}
+                    value={price}
+                    onChangeText={setPrice}
+                    placeholder="0.00"
+                    placeholderTextColor="#bbb"
+                    keyboardType="numeric"
+                  />
                 </View>
-              )}
-            </TouchableOpacity>
-          </View>
-        </View>
+              </View>
 
-        <TouchableOpacity style={styles.createButton} onPress={handleCreateBasket}>
-          <Text style={styles.createButtonText}>Créer le panier</Text>
+              <View style={styles.inputGroupRow}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.label}>Date de collecte</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={collectionDate}
+                    onChangeText={setCollectionDate}
+                    placeholder="JJ/MM/AAAA"
+                    placeholderTextColor="#bbb"
+                  />
+                </View>
+                <View style={{ width: 12 }} />
+                <View style={{ width: 140 }}>
+                  <Text style={styles.label}>Heure</Text>
+                  <TextInput
+                    style={styles.inputCompact}
+                    value={collectionTime}
+                    onChangeText={setCollectionTime}
+                    placeholder="HH:MM"
+                    placeholderTextColor="#bbb"
+                  />
+                </View>
+              </View>
+
+              <View style={styles.imageSection}>
+                <Text style={styles.label}>Photo du panier</Text>
+                <TouchableOpacity style={styles.imageButton} onPress={handleImagePicker} activeOpacity={0.8}>
+                  {selectedImage ? (
+                    <View style={styles.imagePreview}>
+                      <Image source={{ uri: selectedImage.uri }} style={styles.previewImage} />
+                      <View style={styles.imageOverlay}>
+                        <MaterialIcons name="check-circle" size={28} color="#fff" />
+                      </View>
+                    </View>
+                  ) : (
+                    <View style={styles.imagePlaceholder}>
+                      <MaterialIcons name="camera-alt" size={36} color="#7a8b7a" />
+                      <Text style={styles.placeholderText}>Ajouter une photo</Text>
+                      <Text style={styles.placeholderSubtext}>Appuyez pour choisir</Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+
+          <View style={{ height: 120 }} />
+        </ScrollView>
+      </KeyboardAvoidingView>
+
+      <View style={styles.createButtonWrap}>
+        <TouchableOpacity style={styles.createButton} onPress={handleCreateBasket} activeOpacity={0.9}>
+          <Text style={styles.createButtonText}>Publier le panier</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -213,27 +256,35 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 20,
-    paddingTop: 50,
+    paddingHorizontal: 20,
+    paddingTop: 48,
+    paddingBottom: 8,
   },
   backButton: {
-    marginRight: 15,
+    marginRight: 12,
+    padding: 6,
+    borderRadius: 8,
+    backgroundColor: '#f3f8f3',
+  },
+  headerTitles: {
+    flex: 1,
   },
   headerTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#000',
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#1f2f1d',
+  },
+  headerSubtitle: {
+    fontSize: 12,
+    color: '#6b7a6b',
+    marginTop: 4,
   },
   content: {
-    flex: 1,
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingBottom: 24,
   },
   form: {
-    flex: 1,
-  },
-  inputGroup: {
-    marginBottom: 20,
+    marginBottom: 8,
   },
   label: {
     fontSize: 16,
@@ -242,29 +293,47 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   input: {
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
+    borderWidth: 0,
     borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    fontSize: 18,
-    color: '#333',
-    backgroundColor: '#fff',
-    marginTop: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 16,
+    color: '#23332a',
+    backgroundColor: '#f6fbf6',
+    marginTop: 6,
+    borderColor: 'transparent',
+  },
+  inputCompact: {
+    borderWidth: 0,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 16,
+    color: '#23332a',
+    backgroundColor: '#f6fbf6',
+    marginTop: 6,
+    textAlign: 'center',
+  },
+  inputGroupRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
   },
   imageSection: {
-    marginBottom: 20,
+    marginBottom: 12,
   },
   imageButton: {
     width: '100%',
-    height: 120,
+    height: 160,
     borderWidth: 1,
-    borderColor: '#e0e0e0',
-    borderRadius: 8,
+    borderColor: '#dfeee0',
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#fbfdfb',
     marginTop: 8,
+    overflow: 'hidden',
+    borderStyle: 'dashed',
   },
   imagePlaceholder: {
     alignItems: 'center',
@@ -296,7 +365,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    backgroundColor: 'rgba(31,47,29,0.35)',
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 6,
@@ -307,17 +376,32 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '600',
   },
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: 14,
+    padding: 14,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  createButtonWrap: {
+    position: 'absolute',
+    left: 16,
+    right: 16,
+    bottom: 22,
+  },
   createButton: {
     backgroundColor: '#2d5a27',
     paddingVertical: 16,
-    paddingHorizontal: 24,
-    borderRadius: 8,
+    borderRadius: 14,
     alignItems: 'center',
-    marginTop: 20,
+    justifyContent: 'center',
   },
   createButtonText: {
     color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: 16,
+    fontWeight: '800',
   },
 });

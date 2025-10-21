@@ -1,0 +1,265 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Obbo Admin</title>
+  <!-- Tailwind Play CDN for zero-install demo -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root { --brand: #1f7a3d; --brand-dark: #16592a; }
+  </style>
+</head>
+<body class="h-screen bg-gray-100 font-sans text-gray-800">
+  <div class="flex h-full">
+    <!-- Sidebar -->
+    <aside class="w-64 bg-gradient-to-b from-green-700 to-green-600 text-white p-6 flex flex-col">
+      <div class="text-2xl font-bold mb-6">Obbo</div>
+      <nav class="flex-1">
+        <a class="block py-2 px-3 rounded bg-white/10 mb-1" href="#">Dashboards</a>
+    <a class="block py-2 px-3 rounded hover:bg-white/10 mb-1" href="merchants.html">Commerçants</a>
+  <a class="block py-2 px-3 rounded hover:bg-white/10 mb-1" href="orders.html">Commandes</a>
+  <a class="block py-2 px-3 rounded hover:bg-white/10 mb-1" href="clients.html">Clients</a>
+  <a class="block py-2 px-3 rounded hover:bg-white/10 mb-1" href="users.html">Utilisateurs</a>
+      </nav>
+      <div class="mt-6 text-sm opacity-90">Admin • Obbo</div>
+    </aside>
+
+    <!-- Main -->
+    <div class="flex-1 p-6 overflow-auto">
+      <header class="flex items-center justify-between mb-6">
+        <div>
+          <h1 class="text-2xl font-semibold">Tableau de bord</h1>
+          <p class="text-sm text-gray-600">Vue d'ensemble des performances</p>
+        </div>
+        <div class="flex items-center gap-3">
+          <input placeholder="Rechercher..." class="px-3 py-2 border rounded" />
+          <button id="logout" class="bg-white text-green-700 px-3 py-2 rounded hidden">Se déconnecter</button>
+          <button id="loginBtn" class="bg-white text-green-700 px-3 py-2 rounded">Se connecter</button>
+        </div>
+      </header>
+
+      <!-- Login modal -->
+      <div id="loginModal" class="fixed inset-0 bg-black/40 flex items-center justify-center hidden">
+        <div class="bg-white p-6 rounded shadow w-96">
+          <h3 class="text-lg font-semibold mb-3">Admin Login</h3>
+          <div class="space-y-2">
+            <input id="loginEmail" placeholder="Email or phone" class="w-full px-3 py-2 border rounded" />
+            <input id="loginPassword" type="password" placeholder="Password" class="w-full px-3 py-2 border rounded" />
+          </div>
+          <div class="mt-4 flex justify-end gap-2">
+            <button id="loginCancel" class="px-3 py-2 rounded">Annuler</button>
+            <button id="loginSubmit" class="bg-green-600 text-white px-3 py-2 rounded">Se connecter</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- KPI cards (clickable) -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div class="bg-white p-4 rounded shadow">
+          <button id="kpiSalesBtn" class="w-full inline-flex items-center gap-3 p-2 border border-gray-300 rounded bg-white hover:bg-gray-50" title="Cliquer pour voir le détail des ventes">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 11V3m0 8l-4-4m4 4 4-4M21 21H3"/></svg>
+            <div class="text-left">
+              <div class="text-sm text-gray-500">Ventes — période: 30 derniers jours</div>
+              <div class="text-2xl font-bold"><span id="salesAmount">-</span></div>
+            </div>
+          </button>
+        </div>
+        <div class="bg-white p-4 rounded shadow">
+          <button id="kpiProfitBtn" class="w-full inline-flex items-center gap-3 p-2 border border-gray-300 rounded bg-white hover:bg-gray-50" title="Cliquer pour voir le détail du profit">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 1.12-3 2.5S10.343 13 12 13s3-1.12 3-2.5S13.657 8 12 8z"/></svg>
+            <div class="text-left">
+              <div class="text-sm text-gray-500">Profit net — période: 30 derniers jours</div>
+              <div class="text-2xl font-bold"><span id="profitAmount">-</span></div>
+            </div>
+          </button>
+        </div>
+        <div class="bg-white p-4 rounded shadow">
+          <button id="kpiGrowthBtn" class="w-full inline-flex items-center gap-3 p-2 border border-gray-300 rounded bg-white hover:bg-gray-50" title="Cliquer pour voir le détail de la croissance">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 17l6-6 4 4 8-8"/></svg>
+            <div class="text-left">
+              <div class="text-sm text-gray-500">Taux de croissance (%), période: 30 derniers jours</div>
+              <div class="text-2xl font-bold text-green-600"><span id="growthAmount">-</span></div>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <!-- Dashboard widget: revenue sparkline + quick actions + recent errors -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div class="lg:col-span-3 bg-white p-4 rounded shadow">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="font-semibold">Tableau rapide</h3>
+            <div class="text-sm text-gray-500">Mises à jour simulées</div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <!-- Revenue sparkline -->
+            <div class="md:col-span-2 p-3 bg-gray-50 rounded">
+              <div class="flex items-center justify-between mb-2">
+                <div>
+                  <div class="text-sm text-gray-500">Revenu (24h)</div>
+                  <div class="text-2xl font-bold" id="revenueAmount">120 450 DH</div>
+                </div>
+                <div class="text-sm text-gray-500">Variation: <span id="revenueDelta" class="text-green-600">+4.2%</span></div>
+              </div>
+              <canvas id="sparklineRevenue" height="80" class="w-full"></canvas>
+            </div>
+
+            <!-- Quick actions + recent errors -->
+            <div class="p-3 bg-gray-50 rounded flex flex-col gap-3">
+              <div>
+                <div class="text-sm text-gray-500 mb-2">Actions rapides</div>
+                <div class="flex flex-wrap gap-2">
+                  <button id="quickCreateOffer" class="px-3 py-1 bg-green-600 text-white rounded text-sm">Nouvelle offre</button>
+                  <button id="quickNotify" class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Envoyer notification</button>
+                  <button id="quickSeed" class="px-3 py-1 bg-yellow-500 text-white rounded text-sm">Seed test data</button>
+                </div>
+              </div>
+
+              <div>
+                <div class="text-sm text-gray-500 mb-2">Erreurs récentes</div>
+                <ul id="recentErrors" class="text-sm text-red-700 space-y-2 max-h-36 overflow-auto">
+                  <li class="flex items-center justify-between bg-white p-2 rounded shadow-sm"><span>Erreur: paiement échoué pour o_123</span> <button class="text-xs text-gray-500" data-action="dismiss-error">Ignorer</button></li>
+                  <li class="flex items-center justify-between bg-white p-2 rounded shadow-sm"><span>Erreur: offre invalidée par import</span> <button class="text-xs text-gray-500" data-action="dismiss-error">Ignorer</button></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Viewers chart and online users -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-6">
+        <div class="lg:col-span-2 bg-white p-4 rounded shadow">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="font-semibold">Visiteurs (dernières heures)</h3>
+            <div class="text-sm text-gray-500">Données simulées si pas d'API</div>
+          </div>
+          <div class="flex items-center justify-between mb-2">
+            <div>
+              <div class="text-sm text-gray-500">Total visiteurs (période)</div>
+              <button id="viewersTotalBtn" class="mt-1 inline-flex items-center gap-2 px-3 py-1 border border-gray-300 rounded shadow-sm bg-white hover:bg-gray-50 text-sm text-gray-800">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h4l3 9 4-18 3 9h4"/></svg>
+                <span id="viewersTotal">-</span>
+              </button>
+            </div>
+          </div>
+          <canvas id="viewersChart" class="w-full" height="160"></canvas>
+        </div>
+
+        <div class="bg-white p-4 rounded shadow">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="font-semibold">En ligne maintenant</h3>
+            <div class="text-sm text-gray-500"><span id="onlineCount">0</span></div>
+          </div>
+          <ul id="onlineUsersList" class="space-y-2 text-sm text-gray-700 max-h-64 overflow-auto">
+            <!-- online users will be injected here -->
+          </ul>
+          <div class="mt-3">
+            <div class="text-sm text-gray-500 mb-2">Événements en temps réel</div>
+            <ul id="realtimeEvents" class="space-y-2 max-h-40 overflow-auto"></ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Merchants table -->
+      <section id="merchants" class="mt-6 bg-white p-4 rounded shadow">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-lg font-semibold">Commerçants récents <span id="merchantsSampleBadge" class="ml-2 text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded hidden">Données d'exemple</span></h2>
+          <div class="flex items-center gap-3">
+            <div id="merchantsSpinner" class="hidden"><svg class="w-4 h-4 animate-spin text-green-700" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" stroke-opacity="0.25" fill="none"></circle><path d="M22 12a10 10 0 0 0-10-10" stroke="currentColor" stroke-width="4" stroke-linecap="round" fill="none"></path></svg></div>
+            <div id="merchantsLast" class="text-xs text-gray-500 hidden">Dernière: <span id="merchantsLastTime"></span></div>
+            <button id="refreshMerchants" class="text-sm text-green-700">Actualiser</button>
+          </div>
+        </div>
+        <table class="w-full text-left text-sm">
+          <thead>
+            <tr class="text-gray-500">
+              <th class="pb-2">Nom</th>
+              <th class="pb-2">Email</th>
+              <th class="pb-2">Statut</th>
+              <th class="pb-2">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="merchantsBody">
+          </tbody>
+        </table>
+      </section>
+
+      <!-- Orders table -->
+      <section id="orders" class="mt-6 bg-white p-4 rounded shadow">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-lg font-semibold">Commandes récentes <span id="ordersSampleBadge" class="ml-2 text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded hidden">Données d'exemple</span></h2>
+          <div class="flex items-center gap-3">
+            <div id="ordersSpinner" class="hidden"><svg class="w-4 h-4 animate-spin text-green-700" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" stroke-opacity="0.25" fill="none"></circle><path d="M22 12a10 10 0 0 0-10-10" stroke="currentColor" stroke-width="4" stroke-linecap="round" fill="none"></path></svg></div>
+            <div id="ordersLast" class="text-xs text-gray-500 hidden">Dernière: <span id="ordersLastTime"></span></div>
+            <button id="exportOrders" class="text-sm text-gray-700">Exporter CSV</button>
+            <button id="refreshOrders" class="text-sm text-green-700">Actualiser</button>
+          </div>
+        </div>
+        <table class="w-full text-left text-sm">
+          <thead>
+            <tr class="text-gray-500">
+              <th class="pb-2">ID</th>
+              <th class="pb-2">Client</th>
+              <th class="pb-2">Total</th>
+              <th class="pb-2">Statut</th>
+            </tr>
+          </thead>
+          <tbody id="ordersBody"></tbody>
+        </table>
+      </section>
+
+      <!-- Admin notifications: new baskets awaiting approval -->
+      <section id="adminNotifications" class="mt-6 bg-white p-4 rounded shadow">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-lg font-semibold">Notifications administrateur</h2>
+        </div>
+        <ul id="adminNotificationsList" class="space-y-3"></ul>
+      </section>
+
+      <footer class="mt-6 text-sm text-gray-500">© Obbo - Admin</footer>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Viewers detail modal -->
+  <div id="viewersModal" class="fixed inset-0 hidden items-center justify-center bg-black bg-opacity-50">
+    <div class="bg-white rounded shadow max-w-4xl w-full p-4">
+      <div class="flex items-center justify-between mb-2">
+        <h3 class="font-semibold">Visiteurs - Détails</h3>
+        <div class="flex items-center gap-2"><button id="viewersModalClose" class="px-3 py-1 rounded bg-gray-200">Fermer</button></div>
+      </div>
+      <div class="mb-4">
+        <canvas id="viewersLargeChart" height="200" class="w-full"></canvas>
+      </div>
+      <div>
+        <h4 class="font-semibold mb-2">Données brutes</h4>
+        <pre id="viewersRaw" class="text-sm bg-gray-50 p-3 rounded max-h-48 overflow-auto"></pre>
+      </div>
+    </div>
+  </div>
+  <!-- KPI modal -->
+  <div id="kpiModal" class="fixed inset-0 hidden items-center justify-center bg-black bg-opacity-50">
+    <div class="bg-white rounded shadow max-w-3xl w-full p-4">
+      <div class="flex items-center justify-between mb-2">
+        <h3 id="kpiModalTitle" class="font-semibold">KPI - Détails</h3>
+        <div class="flex items-center gap-2"><button id="kpiModalClose" class="px-3 py-1 rounded bg-gray-200">Fermer</button></div>
+      </div>
+      <div class="mb-4">
+        <canvas id="kpiLargeChart" height="180" class="w-full"></canvas>
+      </div>
+      <div>
+        <h4 class="font-semibold mb-2">Données</h4>
+        <pre id="kpiRaw" class="text-sm bg-gray-50 p-3 rounded max-h-48 overflow-auto"></pre>
+      </div>
+    </div>
+  </div>
+  <script>
+    // Backend API root used by the admin UI (adjust if your backend is on a different host/port)
+    window.API_BASE = window.API_BASE || 'http://localhost:5000';
+  </script>
+  <script src="script.js"></script>
+</body>
+</html>

@@ -4,7 +4,7 @@ import MapView, { Marker, Callout } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { MaterialIcons } from '@expo/vector-icons';
 
-export default function MapScreen({ onBack, items = [], userLocation }) {
+export default function MapScreen({ onBack, items = [], userLocation, onSaveLocation }) {
   const [region, setRegion] = useState(null);
   const [currentLocation, setCurrentLocation] = useState(null);
   const [nearbyPlaces, setNearbyPlaces] = useState([]);
@@ -141,6 +141,23 @@ export default function MapScreen({ onBack, items = [], userLocation }) {
           <TouchableOpacity onPress={centerOnUserLocation} style={styles.locationButton}>
             <MaterialIcons name="my-location" size={20} color="#fff" />
           </TouchableOpacity>
+          {onSaveLocation ? (
+            <TouchableOpacity
+              onPress={() => {
+                // prefer currentLocation coords, fall back to region
+                const coords = currentLocation?.coords ? { ...currentLocation.coords } : (region ? { latitude: region.latitude, longitude: region.longitude } : null);
+                if (!coords) {
+                  Alert.alert('Erreur', 'Localisation introuvable');
+                  return;
+                }
+                const payload = { coords, savedAt: new Date().toISOString() };
+                onSaveLocation(payload);
+              }}
+              style={[styles.locationButton, { marginLeft: 8, backgroundColor: '#2d5a27' }]}
+            >
+              <MaterialIcons name="check" size={20} color="#fff" />
+            </TouchableOpacity>
+          ) : null}
         </View>
       </View>
 
