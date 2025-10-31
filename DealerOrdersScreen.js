@@ -201,6 +201,18 @@ export default function DealerOrdersScreen({
 
                       <View style={styles.rightColumn}>
                         <Text style={styles.orderTotal}>{total} DH</Text>
+                        {/* Progress bar by status */}
+                        <View style={{ width: '100%', marginBottom: 6, marginTop: 2 }}>
+                          {(() => {
+                            let barStyle = styles.progressBarSmall;
+                            if (res.status === 'reserved') barStyle = styles.progressBarLong;
+                            else if (res.status === 'confirmed') barStyle = styles.progressBarShort;
+                            else if (res.status === 'ready_for_pickup' || res.status === 'ready') barStyle = styles.progressBarMedium;
+                            else if (res.status === 'picked_up' || res.status === 'completed') barStyle = styles.progressBarSmall;
+                            else if (res.status === 'cancelled') barStyle = styles.progressBarTiny;
+                            return <View style={barStyle} />;
+                          })()}
+                        </View>
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                           {(() => {
                             const urgency = computeUrgency(res);
@@ -303,14 +315,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#f8f9fa',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 4,
     borderRadius: 14,
     borderWidth: 1,
     borderColor: '#e0e0e0',
     marginRight: 4,
-    minWidth: 68,
-    minHeight: 40,
+    minWidth: 60,
+    minHeight: 28,
   },
   activeFilterChip: {
     backgroundColor: '#2d5a27',
@@ -544,5 +556,46 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '600',
     fontSize: 12,
+  },
+  // Progress bar styles for order status
+  progressBarLong: {
+    height: 7,
+    width: 80,
+    backgroundColor: '#2d5a27',
+    borderRadius: 6,
+    alignSelf: 'flex-end',
+    marginBottom: 2,
+  },
+  progressBarMedium: {
+    height: 7,
+    width: 50,
+    backgroundColor: '#2d5a27',
+    borderRadius: 6,
+    alignSelf: 'flex-end',
+    marginBottom: 2,
+  },
+  progressBarShort: {
+    height: 7,
+    width: 30,
+    backgroundColor: '#2d5a27',
+    borderRadius: 6,
+    alignSelf: 'flex-end',
+    marginBottom: 2,
+  },
+  progressBarSmall: {
+    height: 7,
+    width: 18,
+    backgroundColor: '#2d5a27',
+    borderRadius: 6,
+    alignSelf: 'flex-end',
+    marginBottom: 2,
+  },
+  progressBarTiny: {
+    height: 7,
+    width: 8,
+    backgroundColor: '#a8071a',
+    borderRadius: 6,
+    alignSelf: 'flex-end',
+    marginBottom: 2,
   },
 });

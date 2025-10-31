@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Obbo - Tous vos besoins quotidiens…dans une seule application</title>
+  <link href="https://fonts.googleapis.com/css?family=Montserrat:700,400&display=swap" rel="stylesheet">
+  <style>
+    body { margin: 0; font-family: 'Montserrat', Arial, sans-serif; background: #f8f9fa; color: #222; }
+    .hero { background: linear-gradient(120deg, #2d5a27 60%, #e8f5e8 100%); color: #fff; padding: 70px 20px 40px 20px; text-align: center; }
+    .hero h1 { font-size: 2.5rem; margin-bottom: 16px; font-weight: 700; letter-spacing: 1px; }
+    .hero p { font-size: 1.15rem; margin-bottom: 30px; font-weight: 400; }
+    .cta-btn { background: #fff; color: #2d5a27; border: none; border-radius: 30px; padding: 13px 36px; font-size: 1.1rem; font-weight: 700; cursor: pointer; box-shadow: 0 2px 8px rgba(45,90,39,0.08); transition: background 0.2s, color 0.2s; }
+    .cta-btn:hover { background: #e8f5e8; color: #1e3a1a; }
+    .store-buttons { display: flex; gap: 24px; justify-content: center; margin: 36px 0 0 0; flex-wrap: wrap; }
+    .store-buttons img { height: 56px; min-width: 180px; max-width: 220px; width: 100%; border-radius: 12px; object-fit: contain; }
+    .section-title { text-align: center; font-size: 2rem; color: #2d5a27; margin: 60px 0 24px 0; font-weight: 700; }
+    .features { display: flex; flex-wrap: wrap; justify-content: center; gap: 32px; margin: 0 0 40px 0; padding: 0 20px; }
+    .feature { background: #fff; border-radius: 18px; box-shadow: 0 2px 12px rgba(45,90,39,0.07); padding: 32px 24px; max-width: 320px; flex: 1 1 260px; text-align: center; }
+    .feature img { width: 80px; height: 80px; object-fit: contain; margin-bottom: 14px; }
+    .feature h3 { color: #2d5a27; font-size: 1.2rem; margin-bottom: 10px; font-weight: 700; }
+    .feature p { color: #444; font-size: 1rem; margin: 0; }
+    .coverage { background: #e8f5e8; padding: 36px 10px; text-align: center; margin: 40px 0; border-radius: 18px; }
+    .coverage h3 { color: #2d5a27; font-size: 1.2rem; margin-bottom: 10px; }
+    .coverage-cities { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 12px; }
+    .coverage-cities span { background: #fff; color: #2d5a27; border-radius: 12px; padding: 7px 18px; font-weight: 600; font-size: 1rem; box-shadow: 0 1px 4px rgba(45,90,39,0.06); }
+    .cta-section { background: #fff; border-radius: 18px; box-shadow: 0 2px 12px rgba(45,90,39,0.07); margin: 40px auto; max-width: 700px; padding: 32px 24px; text-align: center; }
+    .cta-section h3 { color: #2d5a27; font-size: 1.2rem; margin-bottom: 10px; }
+    .cta-section p { color: #444; font-size: 1rem; margin-bottom: 18px; }
+    .cta-section a { display: inline-block; margin: 0 10px; background: #2d5a27; color: #fff; border-radius: 20px; padding: 10px 24px; font-weight: 700; text-decoration: none; transition: background 0.2s; }
+    .cta-section a:hover { background: #25611a; }
+    .faq { max-width: 900px; margin: 60px auto 0 auto; padding: 0 16px; }
+    .faq h2 { color: #2d5a27; font-size: 1.5rem; margin-bottom: 18px; text-align: center; }
+    .faq-item { background: #fff; border-radius: 14px; box-shadow: 0 1px 6px rgba(45,90,39,0.06); margin-bottom: 18px; padding: 18px 20px; }
+    .faq-item h4 { color: #2d5a27; font-size: 1.1rem; margin-bottom: 8px; }
+    .faq-item p { color: #444; font-size: 1rem; margin: 0; }
+    .footer { text-align: center; color: #888; font-size: 0.95rem; padding: 30px 10px 18px 10px; margin-top: 40px; }
+    @media (max-width: 900px) { .features { flex-direction: column; align-items: center; } }
+    @media (max-width: 600px) { .section-title { font-size: 1.3rem; } }
+  </style>
+</head>
+<body>
+  <div class="hero">
+    <h1>Tous vos besoins quotidiens…dans une seule application</h1>
+    <p>Obbo, la super-app marocaine, vous permet de gérer vos commandes, paniers et profil commerçant en toute simplicité.<br>Rapide, moderne et professionnelle.</p>
+    <a href="#features"><button class="cta-btn">Découvrir l'application</button></a>
+    <div class="store-buttons">
+      <a href="https://apps.apple.com/" target="_blank"><img src="https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg" alt="Téléchargez l’application App Store" /></a>
+      <a href="https://play.google.com/store" target="_blank"><img src="https://play.google.com/intl/en_us/badges/static/images/badges/fr_badge_web_generic.png" alt="Téléchargez l’application Google Play" /></a>
+    </div>
+  </div>
+
+  <div class="section-title" id="features">Des services variés, une seule application</div>
+  <div class="features">
+    <div class="feature">
+      <img src="https://done.ma/app/uploads/2025/05/fast-food-delivery-burger-meal.webp" alt="Commander un repas" />
+      <h3>Commander un repas</h3>
+      <p>Découvrez les plats les plus savoureux des meilleurs restos marocains, livrés chez vous en un clic.</p>
+    </div>
+    <div class="feature">
+      <img src="https://done.ma/app/uploads/2025/05/buy-fresh-fruits-vegetables-grocery.webp" alt="Courses à domicile" />
+      <h3>Courses à domicile</h3>
+      <p>Vos fruits, légumes et produits essentiels livrés jusqu’à votre porte avec rapidité et fiabilité.</p>
+    </div>
+    <div class="feature">
+      <img src="https://done.ma/app/uploads/2025/05/order-fresh-roses-bouquet.webp" alt="Envoyer des fleurs" />
+      <h3>Envoyer des fleurs</h3>
+      <p>Exprimez vos émotions avec nos plus beaux bouquets, livrés partout au Maroc.</p>
+    </div>
+    <div class="feature">
+      <img src="https://done.ma/app/uploads/2025/05/send-gift-boxes-surprise-packages.webp" alt="Offrir un cadeau" />
+      <h3>Offrir un cadeau</h3>
+      <p>Faites plaisir à vos proches avec des cadeaux soigneusement sélectionnés et livrés rapidement.</p>
+    </div>
+    <div class="feature">
+      <img src="https://done.ma/app/uploads/2025/05/premium-chocolate-gift-box.webp" alt="Commander du chocolat" />
+      <h3>Commander du chocolat</h3>
+      <p>Cédez à la tentation avec notre sélection de chocolats premium, livrés en quelques minutes.</p>
+    </div>
+    <div class="feature">
+      <img src="https://done.ma/app/uploads/2025/05/pharmacy-health-beauty-products.webp" alt="Parapharmacie" />
+      <h3>Parapharmacie</h3>
+      <p>Beauté, hygiène ou santé : découvrez nos produits essentiels livrés rapidement et en toute sécurité.</p>
+    </div>
+  </div>
+
+  <div class="coverage">
+    <h3>Nous venons à vous, où que vous soyez !</h3>
+    <div>Présents dans toutes les villes marocaines, de Casablanca à Rabat, Marrakech et bien plus.</div>
+    <div class="coverage-cities">
+      <span>Casablanca</span><span>Rabat</span><span>Marrakech</span><span>Fès</span><span>Tanger</span><span>Agadir</span><span>Kénitra</span><span>Salé</span><span>Témara</span>
+    </div>
+    <div style="margin-top:18px;">
+      <a href="#" style="color:#2d5a27; font-weight:700; text-decoration:underline;">Vérifiez la disponibilité dans votre ville</a>
+    </div>
+  </div>
+
+  <div class="cta-section">
+    <h3>Votre opportunité de réussir commence ici !</h3>
+    <p>Vous êtes commerçant, restaurateur ou entrepreneur ? Rejoignez-nous et développez votre activité avec Obbo.</p>
+    <a href="#">Devenir livreur</a>
+    <a href="#">Devenir partenaire</a>
+  </div>
+
+  <div class="faq">
+    <h2>Questions fréquentes</h2>
+    <div class="faq-item">
+      <h4>Qu’est-ce que l’application Obbo ?</h4>
+      <p>Obbo est une super application marocaine qui propose des services variés comme la commande de repas, les courses, ou encore l’envoi de fleurs directement à votre domicile.</p>
+    </div>
+    <div class="faq-item">
+      <h4>Comment télécharger l’application et créer un compte ?</h4>
+      <p>Il suffit de télécharger l’application depuis Google Play ou l’App Store, puis de créer un compte avec votre numéro de téléphone ou adresse e-mail.</p>
+    </div>
+    <div class="faq-item">
+      <h4>Quels sont les moyens de paiement disponibles ?</h4>
+      <p>Vous pouvez payer par carte bancaire, en espèces à la livraison ou via des portefeuilles électroniques selon la disponibilité du service dans votre zone.</p>
+    </div>
+    <div class="faq-item">
+      <h4>Comment contacter l’équipe de support ?</h4>
+      <p>Vous pouvez nous contacter via le chat intégré dans l’application ou par e-mail.</p>
+    </div>
+  </div>
+
+  <div class="footer">
+    &copy; 2025 Obbo. Tous droits réservés. | <a href="#" style="color:#2d5a27; text-decoration:underline;">Contactez-nous</a>
+  </div>
+</body>
+</html>

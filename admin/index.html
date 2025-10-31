@@ -87,46 +87,7 @@
 
       <!-- Dashboard widget: revenue sparkline + quick actions + recent errors -->
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div class="lg:col-span-3 bg-white p-4 rounded shadow">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="font-semibold">Tableau rapide</h3>
-            <div class="text-sm text-gray-500">Mises à jour simulées</div>
-          </div>
-
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <!-- Revenue sparkline -->
-            <div class="md:col-span-2 p-3 bg-gray-50 rounded">
-              <div class="flex items-center justify-between mb-2">
-                <div>
-                  <div class="text-sm text-gray-500">Revenu (24h)</div>
-                  <div class="text-2xl font-bold" id="revenueAmount">120 450 DH</div>
-                </div>
-                <div class="text-sm text-gray-500">Variation: <span id="revenueDelta" class="text-green-600">+4.2%</span></div>
-              </div>
-              <canvas id="sparklineRevenue" height="80" class="w-full"></canvas>
-            </div>
-
-            <!-- Quick actions + recent errors -->
-            <div class="p-3 bg-gray-50 rounded flex flex-col gap-3">
-              <div>
-                <div class="text-sm text-gray-500 mb-2">Actions rapides</div>
-                <div class="flex flex-wrap gap-2">
-                  <button id="quickCreateOffer" class="px-3 py-1 bg-green-600 text-white rounded text-sm">Nouvelle offre</button>
-                  <button id="quickNotify" class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Envoyer notification</button>
-                  <button id="quickSeed" class="px-3 py-1 bg-yellow-500 text-white rounded text-sm">Seed test data</button>
-                </div>
-              </div>
-
-              <div>
-                <div class="text-sm text-gray-500 mb-2">Erreurs récentes</div>
-                <ul id="recentErrors" class="text-sm text-red-700 space-y-2 max-h-36 overflow-auto">
-                  <li class="flex items-center justify-between bg-white p-2 rounded shadow-sm"><span>Erreur: paiement échoué pour o_123</span> <button class="text-xs text-gray-500" data-action="dismiss-error">Ignorer</button></li>
-                  <li class="flex items-center justify-between bg-white p-2 rounded shadow-sm"><span>Erreur: offre invalidée par import</span> <button class="text-xs text-gray-500" data-action="dismiss-error">Ignorer</button></li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </div>
+        <!-- Removed Tableau rapide, Actions rapides, and Erreurs récentes widget -->
       </div>
 
       <!-- Viewers chart and online users -->

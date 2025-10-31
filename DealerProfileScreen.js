@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { View, Text, StatusBar, TouchableOpacity, StyleSheet, ScrollView, Platform } from 'react-native';
 import SafeAreaWrapper from './utils/SafeAreaWrapper';
@@ -64,9 +65,9 @@ export default function DealerProfileScreen({ onNavigateHome, onNavigateBaskets,
             <MaterialIcons name="chevron-right" size={24} color="#ccc" />
           </TouchableOpacity>
         </View>
-  </ScrollView>
+      </ScrollView>
 
-  <View style={styles.bottomHeader}>
+      <View style={styles.bottomHeader}>
         <TouchableOpacity style={styles.headerItem} onPress={onNavigateHome}>
           <MaterialIcons name="home" size={22} color="#2d5a27" />
           <Text style={styles.headerItemText}>Home</Text>
@@ -112,54 +113,71 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   profileCard: {
-    backgroundColor: '#f8f9fa',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
+    backgroundColor: '#f9fafb',
+    borderRadius: 18,
+    padding: 22,
+    marginBottom: 22,
+    shadowColor: '#2d5a27',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.10,
+    shadowRadius: 16,
+    elevation: 6,
   },
   avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 84,
+    height: 84,
+    borderRadius: 42,
     backgroundColor: '#e8f5e8',
     alignItems: 'center',
     justifyContent: 'center',
     alignSelf: 'center',
-    marginBottom: 12,
+    marginBottom: 14,
+    borderWidth: 2,
+    borderColor: '#2d5a27',
   },
   businessName: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: 'bold',
-    color: '#333',
-    textAlign: 'center',
-  },
-  businessType: {
-    fontSize: 14,
-    color: '#666',
+    color: '#222',
     textAlign: 'center',
     marginTop: 2,
   },
-  businessPhone: {
-    fontSize: 14,
+  businessType: {
+    fontSize: 15,
     color: '#2d5a27',
     textAlign: 'center',
-    marginTop: 6,
+    marginTop: 2,
+    fontWeight: '600',
+    letterSpacing: 0.2,
+  },
+  businessPhone: {
+    fontSize: 15,
+    color: '#2d5a27',
+    textAlign: 'center',
+    marginTop: 7,
     fontWeight: '700',
+    letterSpacing: 0.1,
   },
   statsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 16,
+    marginTop: 18,
+    marginBottom: 2,
   },
   statBox: {
     flex: 1,
     backgroundColor: '#fff',
-    paddingVertical: 12,
-    marginHorizontal: 4,
-    borderRadius: 10,
+    paddingVertical: 14,
+    marginHorizontal: 6,
+    borderRadius: 14,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#e0e0e0',
+    borderColor: '#2d5a27',
+    shadowColor: '#2d5a27',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.07,
+    shadowRadius: 4,
+    elevation: 1,
   },
   statValue: {
     fontSize: 18,
@@ -172,17 +190,22 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   actions: {
-    marginTop: 16,
-    gap: 10,
+    marginTop: 20,
+    gap: 12,
   },
   primaryButton: {
     backgroundColor: '#2d5a27',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 12,
-    borderRadius: 10,
+    paddingVertical: 14,
+    borderRadius: 12,
     gap: 8,
+    shadowColor: '#2d5a27',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.10,
+    shadowRadius: 4,
+    elevation: 2,
   },
   primaryButtonText: {
     color: '#fff',
@@ -203,9 +226,16 @@ const styles = StyleSheet.create({
   },
   menuList: {
     backgroundColor: '#fff',
-    borderRadius: 12,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#e0e0e0',
+    borderColor: '#2d5a27',
+    overflow: 'hidden',
+    shadowColor: '#2d5a27',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
+    marginBottom: 18,
   },
   menuItem: {
     flexDirection: 'row',
@@ -229,9 +259,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
-    backgroundColor: '#dcefe0',
+    backgroundColor: '#e8f5e8',
     borderRadius: 500,
-    paddingVertical: 10,
+    paddingVertical: 12,
+    shadowColor: '#2d5a27',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
   headerItem: {
     alignItems: 'center',
